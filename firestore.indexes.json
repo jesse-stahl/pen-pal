@@ -1,0 +1,10 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "study",
+      "queryScope": "COLLECTION",
+      "fields": [{ "fieldPath": "dueAt", "order": "ASCENDING" }]
+    }
+  ],
+  "fieldOverrides": []
+}
