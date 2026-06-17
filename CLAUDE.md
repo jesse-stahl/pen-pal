@@ -2,9 +2,11 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Project status: pre-implementation
+## Project status: implemented
 
-This repo currently contains **only the implementation plan** (`plan-penpal-v1.md`) and `.gitignore` — no application code has been written yet. `plan-penpal-v1.md` is the authoritative spec: it defines the full data model, architecture, and an ordered, test-first task breakdown (milestones M0–M9). Read it before writing any code, and keep code consistent with it (or update the plan if a decision changes).
+The app, data layer, and Cloud Functions are built and deployed (Firebase project `pen-pal-dev`). The original implementation plan (`plan-penpal-v1.md`) defined the data model, architecture, and a test-first milestone breakdown; it has since been removed now that the code is the source of truth. Keep this file in sync as decisions change.
+
+**Region:** Firestore `(default)` and both Cloud Functions live in **`asia-southeast1`**. A 2nd-gen Firestore trigger must run in the database's region, and the database's region is immutable — so do not change the function region away from the database's region without recreating the database to match.
 
 ## What PenPal is
 
@@ -34,7 +36,7 @@ Backend deploy:
 
 2. **Firebase** — Firestore (data + offline persistence), Auth (Google + Apple), and the client talks to it through thin data-layer modules.
 
-3. **Cloud Functions** (`functions/`, separate npm package, Node 20, Blaze plan) — provides two server-only capabilities the client cannot do safely: a **Google Cloud Translation proxy** (`translate`, keeps the API key server-side) and a Firestore **`onWordCreated`** trigger that sends partner-nudge push notifications (via the Expo Push service) and increments the word-trade counter.
+3. **Cloud Functions** (`functions/`, separate npm package, Node 24, region `asia-southeast1`, Blaze plan) — provides two server-only capabilities the client cannot do safely: a **Google Cloud Translation proxy** (`translate`, keeps the API key server-side) and a Firestore **`onWordCreated`** trigger that sends partner-nudge push notifications (via the Expo Push service) and increments the word-trade counter.
 
 **Layering convention (keep this separation):**
 - `src/domain/` — **pure, dependency-free TypeScript** (SM-2 scheduler, fuzzy answer matching, invite codes, quiz builders, streaks, study-direction). All built test-first; this is the heart of the app and where most unit tests live.
@@ -43,7 +45,7 @@ Backend deploy:
 - `src/services/` — external integrations (translate callable, notifications).
 - `app/` — screens only; delegate logic to the layers above.
 
-**Data model is deliberately denormalized** (see plan for exact shapes). Key decisions that aren't obvious from the code:
+**Data model is deliberately denormalized.** Key decisions that aren't obvious from the code:
 - A list's "type" is **implicit in membership count** (private = 1 member, shared = 2, group = 3+). There is no type field.
 - A word can belong to many lists; copies share a stable **`groupId`**. Per-user study state lives under `users/{uid}/study/{groupId}`, so progress is unified across lists and private to each user.
 - **Study direction is implicit**: a user is always shown the prompt in their native language and recalls the target language (`buildPromptAnswer`).
