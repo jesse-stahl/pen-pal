@@ -49,6 +49,7 @@ export async function addMember(listId: string, member: UserDoc): Promise<void> 
 export async function removeMember(listId: string, uid: string): Promise<void> {
   const ref = doc(db, 'lists', listId);
   const snap = await getDoc(ref);
+  if (!snap.exists()) return;
   const data = snap.data() as ListDoc;
   const members = { ...data.members };
   delete members[uid];

@@ -23,6 +23,10 @@ export async function registerForPush(uid: string): Promise<void> {
     }
     if (status !== 'granted') return;
     const projectId = process.env.EXPO_PUBLIC_EAS_PROJECT_ID;
+    if (!projectId) {
+      console.warn('Push registration skipped: EXPO_PUBLIC_EAS_PROJECT_ID is not set.');
+      return;
+    }
     const token = (await Notifications.getExpoPushTokenAsync({ projectId })).data;
     await savePushToken(uid, token);
   } catch (err) {

@@ -74,6 +74,7 @@ export interface InviteDoc {
 
 export interface TradeDoc {
   pairKey: string;
+  uids: string[];
   counts: Record<string, number>;
   updatedAt: Timestamp;
 }

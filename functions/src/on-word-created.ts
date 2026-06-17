@@ -27,6 +27,7 @@ async function bumpTrade(db: admin.firestore.Firestore, authorUid: string, partn
   await db.doc(`trades/${pairKey}`).set(
     {
       pairKey,
+      uids: [authorUid, partnerUid],
       counts: { [authorUid]: admin.firestore.FieldValue.increment(1) },
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     },

@@ -1,4 +1,4 @@
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { Text, Pressable, StyleSheet } from 'react-native';
 import { ListDoc } from '../../firebase/schema';
 
 function membershipLabel(n: number): string {

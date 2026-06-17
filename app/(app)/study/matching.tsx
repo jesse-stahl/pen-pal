@@ -27,17 +27,17 @@ export default function Matching() {
 
   const allMatched = matched.size === round.prompts.length;
   if (allMatched) {
-    recordStudyDay(profile.uid);
     return <View style={styles.c}><Text style={styles.done}>Matched all in {seconds}s! 🎉</Text></View>;
   }
 
   async function tapAnswer(groupId: string) {
-    if (!selectedPrompt) return;
+    if (!selectedPrompt || !round) return;
     if (selectedPrompt === groupId) {
       const m = new Set(matched);
       m.add(groupId);
       setMatched(m);
       await gradeStudy(profile.uid, groupId, 4);
+      if (m.size === round.prompts.length) recordStudyDay(profile.uid);
     }
     setSelectedPrompt(null);
   }

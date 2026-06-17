@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { View, Text, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { useDueCards } from '../../../src/hooks/use-due-cards';
@@ -13,14 +13,9 @@ export default function Flashcards() {
   const [i, setI] = useState(0);
   const [flipped, setFlipped] = useState(false);
 
-  useEffect(() => {
-    if (!loading && cards.length === 0) return;
-  }, [loading, cards.length]);
-
   if (loading) return <Center><ActivityIndicator /></Center>;
   if (cards.length === 0) return <Center><Text style={styles.done}>Nothing due. 🎉</Text></Center>;
   if (i >= cards.length) {
-    recordStudyDay(profile.uid);
     return <Center><Text style={styles.done}>Session complete! 🎉</Text></Center>;
   }
 
@@ -29,6 +24,7 @@ export default function Flashcards() {
   async function grade(g: number) {
     await gradeStudy(profile.uid, card.groupId, g);
     setFlipped(false);
+    if (i + 1 >= cards.length) recordStudyDay(profile.uid);
     setI((n) => n + 1);
   }
 

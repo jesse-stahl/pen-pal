@@ -17,7 +17,7 @@ export default function Typing() {
 
   if (loading) return <View style={styles.c}><ActivityIndicator /></View>;
   if (cards.length === 0) return <View style={styles.c}><Text style={styles.done}>Nothing due. 🎉</Text></View>;
-  if (i >= cards.length) { recordStudyDay(profile.uid); return <View style={styles.c}><Text style={styles.done}>Done! 🎉</Text></View>; }
+  if (i >= cards.length) return <View style={styles.c}><Text style={styles.done}>Done! 🎉</Text></View>;
 
   const card = cards[i];
 
@@ -29,6 +29,7 @@ export default function Typing() {
   function next() {
     setInput('');
     setResult(null);
+    if (i + 1 >= cards.length) recordStudyDay(profile.uid);
     setI((n) => n + 1);
   }
 

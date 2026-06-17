@@ -21,7 +21,7 @@ export default function MultipleChoice() {
 
   if (loading) return <View style={styles.c}><ActivityIndicator /></View>;
   if (cards.length === 0) return <View style={styles.c}><Text style={styles.done}>Nothing due. 🎉</Text></View>;
-  if (i >= cards.length) { recordStudyDay(profile.uid); return <View style={styles.c}><Text style={styles.done}>Done! 🎉</Text></View>; }
+  if (i >= cards.length) return <View style={styles.c}><Text style={styles.done}>Done! 🎉</Text></View>;
   if (!question) return null;
   // Capture the narrowed question so the closure keeps a non-null type.
   const q = question;
@@ -31,7 +31,12 @@ export default function MultipleChoice() {
     setPicked(opt);
     const correct = opt === q.correct;
     await gradeStudy(profile.uid, q.card.groupId, correct ? 4 : 1);
-    setTimeout(() => { setPicked(null); setI((n) => n + 1); }, 700);
+    const isLast = i + 1 >= cards.length;
+    setTimeout(() => {
+      setPicked(null);
+      setI((n) => n + 1);
+      if (isLast) recordStudyDay(profile.uid);
+    }, 700);
   }
 
   return (

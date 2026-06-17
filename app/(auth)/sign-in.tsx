@@ -7,7 +7,7 @@ export default function SignIn() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>PenPal</Text>
-      <Text style={styles.subtitle}>Learn each other's language, together.</Text>
+      <Text style={styles.subtitle}>Learn each other&apos;s language, together.</Text>
 
       <Pressable style={styles.googleBtn} onPress={() => signInWithGoogle()}>
         <Text style={styles.googleText}>Continue with Google</Text>

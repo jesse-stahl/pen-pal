@@ -18,7 +18,23 @@ export default function Onboarding() {
     router.replace('/(app)/lists');
   }
 
-  const Picker = ({ label, value, onPick }: { label: string; value: string; onPick: (c: string) => void }) => (
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>Set up your languages</Text>
+      <View style={styles.cols}>
+        <Picker label="I speak (native)" value={nativeLang} onPick={setNative} />
+        <Picker label="I'm learning (target)" value={targetLang} onPick={setTarget} />
+      </View>
+      {nativeLang === targetLang && nativeLang !== '' && (
+        <Text style={styles.error}>Native and target must differ.</Text>
+      )}
+      <Button title="Continue" onPress={save} disabled={!nativeLang || !targetLang || nativeLang === targetLang} />
+    </View>
+  );
+}
+
+function Picker({ label, value, onPick }: { label: string; value: string; onPick: (c: string) => void }) {
+  return (
     <View style={{ flex: 1 }}>
       <Text style={styles.label}>{label}</Text>
       <FlatList
@@ -33,20 +49,6 @@ export default function Onboarding() {
           </Pressable>
         )}
       />
-    </View>
-  );
-
-  return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Set up your languages</Text>
-      <View style={styles.cols}>
-        <Picker label="I speak (native)" value={nativeLang} onPick={setNative} />
-        <Picker label="I'm learning (target)" value={targetLang} onPick={setTarget} />
-      </View>
-      {nativeLang === targetLang && nativeLang !== '' && (
-        <Text style={styles.error}>Native and target must differ.</Text>
-      )}
-      <Button title="Continue" onPress={save} disabled={!nativeLang || !targetLang || nativeLang === targetLang} />
     </View>
   );
 }

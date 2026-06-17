@@ -39,12 +39,15 @@ service cloud.firestore {
     match /invites/{code} {
       allow read: if signedIn();                 // needed to look up & accept
       allow create: if signedIn() && request.resource.data.createdBy == request.auth.uid;
-      allow update: if signedIn();               // accepting increments uses
+      // Accepting an invite may only increment `uses` by 1; no other field may change.
+      allow update: if signedIn()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['uses'])
+        && request.resource.data.uses == resource.data.uses + 1;
       allow delete: if false;
     }
 
     match /trades/{pairKey} {
-      allow read: if signedIn() && request.auth.uid in pairKey.split('_');
+      allow read: if signedIn() && request.auth.uid in resource.data.uids;
       allow write: if false;                      // only Cloud Functions (admin) write trades
     }
   }

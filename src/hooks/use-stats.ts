@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, getDoc, query, where } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { TradeDoc, UserDoc } from '../firebase/schema';
 
@@ -16,14 +16,15 @@ export function useStats(profile: UserDoc | null) {
   useEffect(() => {
     (async () => {
       if (!profile) return;
-      // trades where this user participates: query both orderings via pairKey prefix is awkward,
-      // so scan trades containing this uid by checking both halves.
-      const all = await getDocs(collection(db, 'trades'));
+      // Only the user's own trades are readable under the security rules, so scope the
+      // query to documents that list this uid in `uids` (array-contains).
+      const all = await getDocs(
+        query(collection(db, 'trades'), where('uids', 'array-contains', profile.uid))
+      );
       const mine: PartnerTrade[] = [];
       for (const d of all.docs) {
         const t = d.data() as TradeDoc;
         const [a, b] = t.pairKey.split('_');
-        if (a !== profile.uid && b !== profile.uid) continue;
         const partnerUid = a === profile.uid ? b : a;
         const partnerSnap = await getDoc(doc(db, 'users', partnerUid));
         mine.push({
