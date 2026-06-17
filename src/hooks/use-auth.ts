@@ -8,24 +8,29 @@ import {
   User,
 } from 'firebase/auth';
 import * as AppleAuthentication from 'expo-apple-authentication';
-import * as Google from 'expo-auth-session/providers/google';
-import * as WebBrowser from 'expo-web-browser';
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { auth } from '../firebase/config';
 import { createUserIfMissing, getUser } from '../data/users';
 import { UserDoc } from '../firebase/schema';
 
-WebBrowser.maybeCompleteAuthSession();
+// Native Google sign-in (Credential Manager on Android, native sheet on iOS). Replaces the
+// expo-auth-session browser flow, which Google now rejects for Android clients ("Custom URI
+// scheme is not enabled"). webClientId is the server client id used to mint the Firebase idToken.
+GoogleSignin.configure({
+  webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
+  iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
+});
+
+async function googleIdToken(): Promise<string | null> {
+  await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+  const result = await GoogleSignin.signIn();
+  return result.type === 'success' ? result.data.idToken : null;
+}
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserDoc | null>(null);
   const [loading, setLoading] = useState(true);
-
-  const [, googleResponse, promptGoogle] = Google.useAuthRequest({
-    iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
-    androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
-    webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
-  });
 
   useEffect(() => {
     return onAuthStateChanged(auth, async (u) => {
@@ -45,13 +50,12 @@ export function useAuth() {
     });
   }, []);
 
-  useEffect(() => {
-    if (googleResponse?.type === 'success') {
-      const idToken = googleResponse.params.id_token;
-      const credential = GoogleAuthProvider.credential(idToken);
-      signInWithCredential(auth, credential);
-    }
-  }, [googleResponse]);
+  async function signInWithGoogle() {
+    const idToken = await googleIdToken();
+    if (!idToken) return; // user cancelled
+    const credential = GoogleAuthProvider.credential(idToken);
+    await signInWithCredential(auth, credential);
+  }
 
   async function signInWithApple() {
     const cred = await AppleAuthentication.signInAsync({
@@ -71,7 +75,7 @@ export function useAuth() {
     profile,
     loading,
     needsOnboarding: !!user && !!profile && (!profile.nativeLang || !profile.targetLang),
-    signInWithGoogle: () => promptGoogle(),
+    signInWithGoogle,
     signInWithApple,
     signOut: () => fbSignOut(auth),
     refreshProfile: async () => user && setProfile(await getUser(user.uid)),

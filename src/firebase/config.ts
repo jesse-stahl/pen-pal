@@ -1,9 +1,5 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import {
-  initializeFirestore,
-  persistentLocalCache,
-  persistentMultipleTabManager,
-} from 'firebase/firestore';
+import { initializeFirestore, memoryLocalCache } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 
 const firebaseConfig = {
@@ -17,9 +13,12 @@ const firebaseConfig = {
 
 export const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 
-// Offline persistence: Firestore caches reads/writes on-device and syncs when online.
+// NOTE: The Firebase JS SDK only supports on-device persistence via IndexedDB, which doesn't
+// exist in React Native, so we use an in-memory cache (online reads/writes work normally).
+// True offline persistence would require migrating to @react-native-firebase — tracked as a
+// follow-up, not needed for v1.
 export const db = initializeFirestore(app, {
-  localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
+  localCache: memoryLocalCache(),
 });
 
 export const auth = getAuth(app);

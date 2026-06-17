@@ -18,11 +18,17 @@ service cloud.firestore {
     }
 
     match /lists/{listId} {
-      allow read: if isMember(listId);
+      // Read/query authorized from the doc's own fields (required for the array-contains
+      // query in userListsQuery — get()-based rules can't authorize a collection query).
+      allow read: if signedIn() && request.auth.uid in resource.data.memberUids;
       allow create: if signedIn() && request.resource.data.ownerUid == request.auth.uid
                     && request.auth.uid in request.resource.data.memberUids;
-      // members may update (rename, membership, counters); only owner may delete
-      allow update: if isMember(listId);
+      // Existing members may update (rename, counters); a signed-in user may also add
+      // themselves to memberUids — this is how accepting an invite (join) works.
+      allow update: if signedIn() && (
+        request.auth.uid in resource.data.memberUids
+        || request.auth.uid in request.resource.data.memberUids
+      );
       allow delete: if signedIn() && resource.data.ownerUid == request.auth.uid;
 
       match /words/{wordId} {

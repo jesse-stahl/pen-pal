@@ -146,3 +146,17 @@ vite.config.ts.timestamp-*
 
 # Cloud Functions build output
 functions/lib/
+
+*plan*.md
+
+# Android signing keystore — NEVER commit
+*.jks
+*.keystore
+
+# Firebase / Google service config (project-specific, inject via EAS/CI)
+google-services.json
+**/google-services.json
+GoogleService-Info.plist
+
+# Expo local state
+.expo/

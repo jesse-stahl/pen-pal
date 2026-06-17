@@ -1,6 +1,18 @@
 import { Tabs } from 'expo-router';
+import { ActivityIndicator, View } from 'react-native';
+import { useSession } from '../../src/store/session';
 
 export default function AppLayout() {
+  // Don't mount tab screens until the profile is in the session — they call useProfile(),
+  // which throws on null. The root gate (app/_layout.tsx) handles redirecting unauthed users.
+  const profile = useSession((s) => s.profile);
+  if (!profile) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center' }}>
+        <ActivityIndicator />
+      </View>
+    );
+  }
   return (
     <Tabs>
       <Tabs.Screen name="lists/index" options={{ title: 'Lists' }} />

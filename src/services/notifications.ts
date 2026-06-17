@@ -12,16 +12,22 @@ Notifications.setNotificationHandler({
 });
 
 export async function registerForPush(uid: string): Promise<void> {
-  if (!Device.isDevice) return;
-  const { status: existing } = await Notifications.getPermissionsAsync();
-  let status = existing;
-  if (existing !== 'granted') {
-    status = (await Notifications.requestPermissionsAsync()).status;
+  // Push is a non-critical enhancement and requires native FCM (Android) / APNs (iOS)
+  // credentials that may not be configured yet. Never let setup failures crash the app.
+  try {
+    if (!Device.isDevice) return;
+    const { status: existing } = await Notifications.getPermissionsAsync();
+    let status = existing;
+    if (existing !== 'granted') {
+      status = (await Notifications.requestPermissionsAsync()).status;
+    }
+    if (status !== 'granted') return;
+    const projectId = process.env.EXPO_PUBLIC_EAS_PROJECT_ID;
+    const token = (await Notifications.getExpoPushTokenAsync({ projectId })).data;
+    await savePushToken(uid, token);
+  } catch (err) {
+    console.warn('Push registration skipped (FCM/APNs not configured yet):', err);
   }
-  if (status !== 'granted') return;
-  const projectId = process.env.EXPO_PUBLIC_EAS_PROJECT_ID;
-  const token = (await Notifications.getExpoPushTokenAsync({ projectId })).data;
-  await savePushToken(uid, token);
 }
 
 /** Schedule a repeating local daily study reminder at the given hour (0-23). */
