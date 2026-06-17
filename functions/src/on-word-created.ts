@@ -57,7 +57,7 @@ function nudgeBody(list: ListData, word: WordData): string {
 }
 
 export const onWordCreated = onDocumentCreated(
-  { document: 'lists/{listId}/words/{wordId}', region: 'us-central1' },
+  { document: 'lists/{listId}/words/{wordId}', region: 'asia-southeast1' },
   async (event) => {
     const word = event.data?.data() as WordData | undefined;
     if (!word) return;

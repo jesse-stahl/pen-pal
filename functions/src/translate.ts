@@ -47,7 +47,7 @@ function readParams(data: Partial<TranslateParams> | undefined): TranslateParams
 }
 
 export const translate = onCall(
-  { secrets: [GOOGLE_TRANSLATE_API_KEY], region: 'us-central1' },
+  { secrets: [GOOGLE_TRANSLATE_API_KEY], region: 'asia-southeast1' },
   async (request: CallableRequest<Partial<TranslateParams>>) => {
     if (!request.auth) throw new HttpsError('unauthenticated', 'Sign in required.');
     const { text, source, target } = readParams(request.data);

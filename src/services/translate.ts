@@ -5,7 +5,7 @@ interface TranslateResult {
   translatedText: string;
 }
 
-const functions = getFunctions(app);
+const functions = getFunctions(app, 'asia-southeast1');
 
 export async function translate(params: {
   text: string;
