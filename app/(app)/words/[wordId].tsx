@@ -1,12 +1,20 @@
 import { useEffect, useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
+import { View, TextInput, Alert, Pressable } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { doc, onSnapshot } from 'firebase/firestore';
+import * as Speech from 'expo-speech';
+import { Volume2, Trash2, ChevronLeft } from 'lucide-react-native';
 import { db } from '../../../src/firebase/config';
 import { ListDoc, WordDoc } from '../../../src/firebase/schema';
 import { getWord, updateWord, deleteWord } from '../../../src/data/words';
 import { getLanguageName } from '../../../src/domain/languages';
 import { useProfile } from '../../../src/store/session';
+import { Screen } from '../../../src/ui/components/screen';
+import { AppText } from '../../../src/ui/components/app-text';
+import { Card } from '../../../src/ui/components/card';
+import { Button } from '../../../src/ui/components/button';
+import { Icon } from '../../../src/ui/components/icon';
+import { colors, spacing, radius } from '../../../src/ui/theme';
 
 export default function EditWord() {
   const { wordId, listId } = useLocalSearchParams<{ wordId: string; listId: string }>();
@@ -37,11 +45,14 @@ export default function EditWord() {
   }, [listId, wordId, list?.id]);
 
   if (!listId || !wordId || !list || !word) {
-    return <View style={styles.container}><Text>Loading…</Text></View>;
+    return (
+      <Screen>
+        <AppText variant="body" color={colors.textMuted}>
+          Loading…
+        </AppText>
+      </Screen>
+    );
   }
-
-  // Capture the narrowed list so the closures below keep a non-null type
-  // (TypeScript does not preserve narrowing of state vars inside nested functions).
   const currentList = list;
 
   async function save() {
@@ -58,27 +69,87 @@ export default function EditWord() {
   function confirmDelete() {
     Alert.alert('Delete word', 'Remove this word from the list?', [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: async () => { await deleteWord(listId, wordId); router.back(); } },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          await deleteWord(listId, wordId);
+          router.back();
+        },
+      },
     ]);
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.label}>{getLanguageName(list.langA)}</Text>
-      <TextInput style={styles.input} value={a} onChangeText={setA} />
-      <Text style={styles.label}>{getLanguageName(list.langB)}</Text>
-      <TextInput style={styles.input} value={b} onChangeText={setB} />
-      <Text style={styles.label}>Notes</Text>
-      <TextInput style={styles.input} value={notes} onChangeText={setNotes} multiline />
-      <Button title="Save" onPress={save} disabled={!a.trim() || !b.trim()} />
-      <View style={{ height: 8 }} />
-      <Button title="Delete" color="#dc2626" onPress={confirmDelete} />
-    </View>
+    <Screen scroll>
+      <Pressable onPress={() => router.back()} hitSlop={12} style={{ marginTop: spacing.sm }}>
+        <Icon icon={ChevronLeft} color={colors.textMuted} />
+      </Pressable>
+
+      <Card style={{ marginTop: spacing.lg, alignItems: 'center', gap: spacing.sm }}>
+        <AppText variant="h1" color={colors.you} style={{ textAlign: 'center' }}>
+          {a || '—'}
+        </AppText>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+          <AppText variant="h2" color={colors.partner} style={{ textAlign: 'center' }}>
+            {b || '—'}
+          </AppText>
+          <Pressable
+            accessibilityLabel="Read aloud"
+            hitSlop={10}
+            onPress={() => b && Speech.speak(b, { language: currentList.langB })}
+          >
+            <Icon icon={Volume2} size={22} color={colors.partner} />
+          </Pressable>
+        </View>
+      </Card>
+
+      <Field label={getLanguageName(currentList.langA)} value={a} onChange={setA} />
+      <Field label={getLanguageName(currentList.langB)} value={b} onChange={setB} />
+      <Field label="Notes" value={notes} onChange={setNotes} multiline />
+
+      <View style={{ gap: spacing.md, marginTop: spacing.xl }}>
+        <Button title="Save changes" onPress={save} disabled={!a.trim() || !b.trim()} />
+        <Button title="Delete word" icon={Trash2} variant="danger" onPress={confirmDelete} />
+      </View>
+    </Screen>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, gap: 8 },
-  label: { fontWeight: '600', marginTop: 8 },
-  input: { borderWidth: 1, borderColor: '#d1d5db', borderRadius: 8, padding: 12, fontSize: 16 },
-});
+function Field({
+  label,
+  value,
+  onChange,
+  multiline = false,
+}: {
+  label: string;
+  value: string;
+  onChange: (s: string) => void;
+  multiline?: boolean;
+}) {
+  return (
+    <View style={{ marginTop: spacing.lg }}>
+      <AppText variant="label" color={colors.textMuted} style={{ marginBottom: spacing.sm }}>
+        {label.toUpperCase()}
+      </AppText>
+      <TextInput
+        style={{
+          backgroundColor: colors.surface,
+          borderWidth: 1,
+          borderColor: colors.border,
+          borderRadius: radius.lg,
+          padding: spacing.lg,
+          color: colors.text,
+          fontFamily: 'Inter_400Regular',
+          fontSize: 16,
+          minHeight: multiline ? 88 : undefined,
+          textAlignVertical: multiline ? 'top' : 'center',
+        }}
+        placeholderTextColor={colors.textMuted}
+        value={value}
+        onChangeText={onChange}
+        multiline={multiline}
+      />
+    </View>
+  );
+}

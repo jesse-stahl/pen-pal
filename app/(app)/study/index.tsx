@@ -1,53 +1,77 @@
-import { View, Text, FlatList, Pressable, StyleSheet } from 'react-native';
+import { View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Layers, ListChecks, Keyboard, Shuffle, Gamepad2, LucideIcon } from 'lucide-react-native';
 import { useProfile } from '../../../src/store/session';
 import { useUserLists } from '../../../src/hooks/use-user-lists';
+import { Screen } from '../../../src/ui/components/screen';
+import { AppText } from '../../../src/ui/components/app-text';
+import { Card } from '../../../src/ui/components/card';
+import { Icon } from '../../../src/ui/components/icon';
+import { EmptyState } from '../../../src/ui/components/empty-state';
+import { colors, spacing } from '../../../src/ui/theme';
 
-const MODES = [
-  { key: 'flashcards', label: 'Flashcards' },
-  { key: 'multiple-choice', label: 'Multiple choice' },
-  { key: 'typing', label: 'Typing' },
-  { key: 'matching', label: 'Matching' },
+const MODES: { key: string; label: string; icon: LucideIcon; accent: string }[] = [
+  { key: 'flashcards', label: 'Flashcards', icon: Layers, accent: colors.you },
+  { key: 'multiple-choice', label: 'Multiple choice', icon: ListChecks, accent: colors.partner },
+  { key: 'typing', label: 'Typing', icon: Keyboard, accent: colors.success },
+  { key: 'matching', label: 'Matching', icon: Shuffle, accent: colors.warning },
 ];
 
-export default function StudyHub() {
+export default function PlayHub() {
   const profile = useProfile();
   const { lists } = useUserLists(profile.uid);
   const router = useRouter();
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.h}>Pick a list, then a mode</Text>
-      <FlatList
-        data={lists}
-        keyExtractor={(l) => l.id}
-        renderItem={({ item }) => (
-          <View style={styles.listBlock}>
-            <Text style={styles.listName}>{item.name}</Text>
-            <View style={styles.modes}>
+    <Screen scroll>
+      <AppText variant="h1" style={{ marginTop: spacing.lg }}>
+        Play
+      </AppText>
+      <AppText variant="body" color={colors.textMuted} style={{ marginTop: spacing.xs }}>
+        Pick a list, then a game.
+      </AppText>
+
+      {lists.length === 0 ? (
+        <EmptyState
+          icon={Gamepad2}
+          title="No lists to play yet"
+          body="Create a list and add a few words to start studying."
+          actionLabel="Create a list"
+          onAction={() => router.push('/(app)/lists/new')}
+        />
+      ) : (
+        lists.map((list) => (
+          <View key={list.id} style={{ marginTop: spacing.xl }}>
+            <AppText variant="h3" style={{ marginBottom: spacing.md }}>
+              {list.name}
+            </AppText>
+            <View style={{ gap: spacing.md }}>
               {MODES.map((m) => (
-                <Pressable
+                <Card
                   key={m.key}
-                  style={styles.mode}
-                  onPress={() => router.push(`/(app)/study/${m.key}?listId=${item.id}`)}
+                  onPress={() => router.push(`/(app)/study/${m.key}?listId=${list.id}`)}
                 >
-                  <Text style={styles.modeText}>{m.label}</Text>
-                </Pressable>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
+                    <View
+                      style={{
+                        width: 44,
+                        height: 44,
+                        borderRadius: 12,
+                        backgroundColor: colors.elevated,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <Icon icon={m.icon} color={m.accent} />
+                    </View>
+                    <AppText variant="bodyStrong">{m.label}</AppText>
+                  </View>
+                </Card>
               ))}
             </View>
           </View>
-        )}
-      />
-    </View>
+        ))
+      )}
+    </Screen>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16 },
-  h: { fontSize: 18, fontWeight: '600', marginBottom: 12 },
-  listBlock: { marginBottom: 20 },
-  listName: { fontSize: 16, fontWeight: '700', marginBottom: 8 },
-  modes: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  mode: { backgroundColor: '#e0ecff', paddingVertical: 8, paddingHorizontal: 12, borderRadius: 20 },
-  modeText: { color: '#1a4ed8', fontWeight: '600' },
-});

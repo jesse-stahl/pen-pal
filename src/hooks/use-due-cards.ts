@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
+import { useFocusEffect } from 'expo-router';
 import { getDocs } from 'firebase/firestore';
 import { listWordsQuery } from '../data/words';
 import { ensureStudy, getDueStudies } from '../data/progress';
@@ -30,21 +31,28 @@ export function useDueCards(listId: string | undefined) {
   const [cards, setCards] = useState<Card[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (!listId) return;
-    let active = true;
-    (async () => {
-      setLoading(true);
-      await seedStudyRecords(listId, profile);
-      const due = await getDueStudies(profile.uid, nowMs());
-      if (!active) return;
-      setCards(due.map((s) => ({ groupId: s.groupId, prompt: s.prompt, answer: s.answer })));
-      setLoading(false);
-    })();
-    return () => {
-      active = false;
-    };
-  }, [listId, profile.uid]);
+  // Refetch on every focus, not just first mount. The game screens live in the Tabs
+  // navigator, which keeps them mounted across navigations — so a plain useEffect would
+  // never re-run when the user re-enters a game, leaving a stale (often empty) deck.
+  useFocusEffect(
+    useCallback(() => {
+      if (!listId) return;
+      let active = true;
+      (async () => {
+        setLoading(true);
+        await seedStudyRecords(listId, profile);
+        const due = await getDueStudies(profile.uid, nowMs());
+        if (!active) return;
+        setCards(due.map((s) => ({ groupId: s.groupId, prompt: s.prompt, answer: s.answer })));
+        setLoading(false);
+      })();
+      return () => {
+        active = false;
+      };
+      // profile is stable for the session; keying on uid avoids refetch loops.
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [listId, profile.uid]),
+  );
 
   return { cards, loading };
 }

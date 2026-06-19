@@ -21,4 +21,9 @@ export const db = initializeFirestore(app, {
   localCache: memoryLocalCache(),
 });
 
+// NOTE: Auth uses in-memory persistence (the session does not survive a cold start). Wiring
+// `initializeAuth` with `getReactNativePersistence(AsyncStorage)` hangs Auth initialization
+// under the New Architecture (the initial onAuthStateChanged never fires), freezing the app on
+// the loading gate. Persisting the session needs a different approach (e.g. migrating auth to
+// @react-native-firebase) — tracked as a follow-up.
 export const auth = getAuth(app);

@@ -1,64 +1,86 @@
 import { useState } from 'react';
-import { View, Text, FlatList, Pressable, StyleSheet, Button } from 'react-native';
+import { View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LANGUAGES } from '../../src/domain/languages';
 import { setLanguages } from '../../src/data/users';
 import { useAuth } from '../../src/hooks/use-auth';
+import { Screen } from '../../src/ui/components/screen';
+import { AppText } from '../../src/ui/components/app-text';
+import { Button } from '../../src/ui/components/button';
+import { Pill } from '../../src/ui/components/pill';
+import { colors, spacing } from '../../src/ui/theme';
 
 export default function Onboarding() {
   const { user, refreshProfile } = useAuth();
   const router = useRouter();
   const [nativeLang, setNative] = useState('');
   const [targetLang, setTarget] = useState('');
+  const sameError = nativeLang !== '' && nativeLang === targetLang;
 
   async function save() {
     if (!user || !nativeLang || !targetLang || nativeLang === targetLang) return;
     await setLanguages(user.uid, nativeLang, targetLang);
     await refreshProfile();
-    router.replace('/(app)/lists');
+    router.replace('/(app)/home');
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Set up your languages</Text>
-      <View style={styles.cols}>
-        <Picker label="I speak (native)" value={nativeLang} onPick={setNative} />
-        <Picker label="I'm learning (target)" value={targetLang} onPick={setTarget} />
+    <Screen scroll>
+      <AppText variant="h1" style={{ marginTop: spacing.xl }}>
+        Set up your languages
+      </AppText>
+
+      <AppText
+        variant="label"
+        color={colors.you}
+        style={{ marginTop: spacing.xl, marginBottom: spacing.md }}
+      >
+        I SPEAK (NATIVE)
+      </AppText>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
+        {LANGUAGES.map((l) => (
+          <Pill
+            key={l.code}
+            label={l.name}
+            active={nativeLang === l.code}
+            color={colors.you}
+            onPress={() => setNative(l.code)}
+          />
+        ))}
       </View>
-      {nativeLang === targetLang && nativeLang !== '' && (
-        <Text style={styles.error}>Native and target must differ.</Text>
-      )}
-      <Button title="Continue" onPress={save} disabled={!nativeLang || !targetLang || nativeLang === targetLang} />
-    </View>
+
+      <AppText
+        variant="label"
+        color={colors.partner}
+        style={{ marginTop: spacing.xl, marginBottom: spacing.md }}
+      >
+        I&apos;M LEARNING (TARGET)
+      </AppText>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
+        {LANGUAGES.map((l) => (
+          <Pill
+            key={l.code}
+            label={l.name}
+            active={targetLang === l.code}
+            color={colors.partner}
+            onPress={() => setTarget(l.code)}
+          />
+        ))}
+      </View>
+
+      {sameError ? (
+        <AppText variant="caption" color={colors.danger} style={{ marginTop: spacing.lg }}>
+          Native and target must be different.
+        </AppText>
+      ) : null}
+
+      <View style={{ marginTop: spacing.xxl }}>
+        <Button
+          title="Continue"
+          onPress={save}
+          disabled={!nativeLang || !targetLang || sameError}
+        />
+      </View>
+    </Screen>
   );
 }
-
-function Picker({ label, value, onPick }: { label: string; value: string; onPick: (c: string) => void }) {
-  return (
-    <View style={{ flex: 1 }}>
-      <Text style={styles.label}>{label}</Text>
-      <FlatList
-        data={LANGUAGES}
-        keyExtractor={(l) => l.code}
-        renderItem={({ item }) => (
-          <Pressable
-            style={[styles.row, value === item.code && styles.rowActive]}
-            onPress={() => onPick(item.code)}
-          >
-            <Text>{item.name}</Text>
-          </Pressable>
-        )}
-      />
-    </View>
-  );
-}
-
-const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, gap: 12 },
-  title: { fontSize: 24, fontWeight: '700' },
-  cols: { flex: 1, flexDirection: 'row', gap: 12 },
-  label: { fontWeight: '600', marginBottom: 8 },
-  row: { padding: 12, borderRadius: 8 },
-  rowActive: { backgroundColor: '#d6e4ff' },
-  error: { color: 'red' },
-});
