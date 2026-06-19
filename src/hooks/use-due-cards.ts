@@ -36,7 +36,11 @@ export function useDueCards(listId: string | undefined) {
   // never re-run when the user re-enters a game, leaving a stale (often empty) deck.
   useFocusEffect(
     useCallback(() => {
-      if (!listId) return;
+      if (!listId) {
+        setCards([]);
+        setLoading(false);
+        return;
+      }
       let active = true;
       (async () => {
         setLoading(true);

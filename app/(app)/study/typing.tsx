@@ -24,11 +24,11 @@ export default function Typing() {
   const [result, setResult] = useState<null | 'correct' | 'wrong'>(null);
 
   useEffect(() => {
-    if (!loading && cards.length > 0) start(cards.length, 'typing', listId);
-  }, [loading, cards.length]);
+    if (!loading && cards.length > 0 && listId) start(cards.length, 'typing', listId);
+  }, [loading, cards.length, listId, start]);
   useEffect(() => {
     if (!loading && cards.length === 0) router.replace('/(app)/study/results');
-  }, [loading, cards.length]);
+  }, [loading, cards.length, router]);
   // Each focus starts a fresh session; this Tabs screen stays mounted between visits.
   useFocusEffect(
     useCallback(() => {

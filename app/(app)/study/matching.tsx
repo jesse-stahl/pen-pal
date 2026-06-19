@@ -23,11 +23,11 @@ export default function Matching() {
   const [matched, setMatched] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    if (!loading && round) start(round.prompts.length, 'matching', listId);
-  }, [loading, round]);
+    if (!loading && round && listId) start(round.prompts.length, 'matching', listId);
+  }, [loading, round, listId, start]);
   useEffect(() => {
     if (!loading && cards.length === 0) router.replace('/(app)/study/results');
-  }, [loading, cards.length]);
+  }, [loading, cards.length, router]);
   // Each focus starts a fresh round; this Tabs screen stays mounted between visits.
   useFocusEffect(
     useCallback(() => {

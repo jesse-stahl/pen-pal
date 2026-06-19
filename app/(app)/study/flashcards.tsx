@@ -22,12 +22,12 @@ export default function Flashcards() {
   const [flipped, setFlipped] = useState(false);
 
   useEffect(() => {
-    if (!loading && cards.length > 0) start(cards.length, 'flashcards', listId);
-  }, [loading, cards.length]);
+    if (!loading && cards.length > 0 && listId) start(cards.length, 'flashcards', listId);
+  }, [loading, cards.length, listId, start]);
 
   useEffect(() => {
     if (!loading && cards.length === 0) router.replace('/(app)/study/results');
-  }, [loading, cards.length]);
+  }, [loading, cards.length, router]);
 
   // Each time the screen is focused, start a fresh session. The Tabs navigator keeps this
   // screen mounted, so without this the position would persist from the previous visit.

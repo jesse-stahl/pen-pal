@@ -22,11 +22,11 @@ export default function MultipleChoice() {
   const [picked, setPicked] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!loading && cards.length > 0) start(cards.length, 'multiple-choice', listId);
-  }, [loading, cards.length]);
+    if (!loading && cards.length > 0 && listId) start(cards.length, 'multiple-choice', listId);
+  }, [loading, cards.length, listId, start]);
   useEffect(() => {
     if (!loading && cards.length === 0) router.replace('/(app)/study/results');
-  }, [loading, cards.length]);
+  }, [loading, cards.length, router]);
   // Each focus starts a fresh session; this Tabs screen stays mounted between visits.
   useFocusEffect(
     useCallback(() => {
