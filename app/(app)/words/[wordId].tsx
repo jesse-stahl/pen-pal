@@ -128,7 +128,11 @@ export default function EditWord() {
           onPress={async () => {
             const next = !learned;
             setLearnedState(next);
-            await setLearned(profile.uid, word.groupId, next);
+            try {
+              await setLearned(profile.uid, word.groupId, next);
+            } catch {
+              setLearnedState(!next); // revert optimistic update on failure
+            }
           }}
           style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
         >

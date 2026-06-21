@@ -48,7 +48,8 @@ service cloud.firestore {
     // usernames/{username}: reverse lookup for uniqueness + friend search.
     match /usernames/{username} {
       allow read: if signedIn();
-      allow create: if signedIn() && request.resource.data.uid == request.auth.uid;
+      allow create: if signedIn() && request.resource.data.uid == request.auth.uid
+        && request.resource.data.keys().hasOnly(['uid']);
       allow delete: if signedIn() && resource.data.uid == request.auth.uid;
       allow update: if false;
     }
@@ -60,6 +61,8 @@ service cloud.firestore {
         && (request.auth.uid == resource.data.from || request.auth.uid == resource.data.to);
       allow create: if signedIn()
         && request.resource.data.from == request.auth.uid
+        && request.resource.data.to != request.auth.uid
+        && request.resource.data.id == id
         && request.resource.data.status == 'pending';
       allow update: if signedIn()
         && request.auth.uid == resource.data.to

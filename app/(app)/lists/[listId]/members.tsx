@@ -34,7 +34,11 @@ export default function Members() {
     if (!listId || !list || backfilled.current) return;
     if (list.ownerUid === profile.uid && !list.inviteCode) {
       backfilled.current = true;
-      refreshListCode(listId, '', profile.uid);
+      // Reset the guard on failure so a later focus retries instead of leaving
+      // the list permanently without a code.
+      refreshListCode(listId, '', profile.uid).catch(() => {
+        backfilled.current = false;
+      });
     }
   }, [listId, list, profile.uid]);
 

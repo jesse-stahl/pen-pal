@@ -12,7 +12,6 @@ import { colors, spacing, radius } from '../../src/ui/theme';
 
 const MESSAGES: Record<string, string> = {
   invalid: 'That code is not valid.',
-  'already-member': 'You are already in this list.',
 };
 
 export default function Join() {
