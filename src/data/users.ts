@@ -1,4 +1,4 @@
-import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from '@react-native-firebase/firestore';
 import { db } from '../firebase/config';
 import { UserDoc } from '../firebase/schema';
 
@@ -18,6 +18,7 @@ export async function createUserIfMissing(params: {
   if (snap.exists()) return;
   await setDoc(ref, {
     uid: params.uid,
+    username: '',
     displayName: params.displayName,
     email: params.email,
     photoURL: params.photoURL,
@@ -31,4 +32,8 @@ export async function createUserIfMissing(params: {
 
 export async function setLanguages(uid: string, nativeLang: string, targetLang: string): Promise<void> {
   await updateDoc(doc(db, 'users', uid), { nativeLang, targetLang });
+}
+
+export async function setDisplayName(uid: string, displayName: string): Promise<void> {
+  await updateDoc(doc(db, 'users', uid), { displayName });
 }

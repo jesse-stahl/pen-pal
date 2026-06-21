@@ -1,9 +1,10 @@
 import {
   collection, doc, addDoc, getDoc, updateDoc, deleteDoc, query, where,
   serverTimestamp, arrayUnion, arrayRemove, increment,
-} from 'firebase/firestore';
+} from '@react-native-firebase/firestore';
 import { db } from '../firebase/config';
 import { ListDoc, ListMemberInfo, UserDoc } from '../firebase/schema';
+import { createListCode } from './list-codes';
 
 export function userListsQuery(uid: string) {
   return query(collection(db, 'lists'), where('memberUids', 'array-contains', uid));
@@ -27,10 +28,14 @@ export async function createList(params: {
     members: { [params.owner.uid]: memberInfo },
     langA: params.langA,
     langB: params.langB,
+    inviteCode: '',
     wordCount: 0,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   });
+  // Allocate the static invite code + mapping doc, then point the list at it.
+  const code = await createListCode(ref.id, params.owner.uid);
+  await updateDoc(doc(db, 'lists', ref.id), { inviteCode: code });
   return ref.id;
 }
 

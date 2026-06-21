@@ -1,11 +1,15 @@
-import { View, FlatList, Pressable } from 'react-native';
-import { useEffect, useState } from 'react';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { doc, onSnapshot } from 'firebase/firestore';
-import { Plus, Users, ChevronLeft, FileText } from 'lucide-react-native';
+import { View, FlatList, Pressable, Alert } from 'react-native';
+import { useEffect, useState, useCallback } from 'react';
+import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
+import { doc, onSnapshot } from '@react-native-firebase/firestore';
+import { Plus, Users, ChevronLeft, FileText, Copy, Trash2, X, Check } from 'lucide-react-native';
 import { db } from '../../../src/firebase/config';
 import { ListDoc } from '../../../src/firebase/schema';
 import { useListWords } from '../../../src/hooks/use-list-words';
+import { useWordSelection } from '../../../src/store/word-selection';
+import { deleteWords } from '../../../src/data/words';
+import { buildDisplayPair } from '../../../src/domain/direction';
+import { useProfile } from '../../../src/store/session';
 import { Screen } from '../../../src/ui/components/screen';
 import { AppText } from '../../../src/ui/components/app-text';
 import { Card } from '../../../src/ui/components/card';
@@ -18,9 +22,11 @@ import { colors, spacing } from '../../../src/ui/theme';
 
 export default function ListDetail() {
   const { listId } = useLocalSearchParams<{ listId: string }>();
+  const profile = useProfile();
   const router = useRouter();
   const [list, setList] = useState<ListDoc | null>(null);
   const { words } = useListWords(listId);
+  const { selecting, selectedIds, toggle, enter, clear } = useWordSelection();
 
   useEffect(() => {
     if (!listId) return;
@@ -28,6 +34,9 @@ export default function ListDetail() {
       setList(s.exists() ? ({ id: s.id, ...s.data() } as ListDoc) : null),
     );
   }, [listId]);
+
+  // Leave selection mode whenever the screen loses focus.
+  useFocusEffect(useCallback(() => () => clear(), [clear]));
 
   if (!list) {
     return (
@@ -41,6 +50,26 @@ export default function ListDetail() {
     );
   }
   const currentList = list;
+  // Orient word rows to the viewer's native language (native term shown first).
+  const nativeLangCode = [currentList.langA, currentList.langB].includes(profile.nativeLang)
+    ? profile.nativeLang
+    : currentList.langA;
+  const targetLangCode = nativeLangCode === currentList.langA ? currentList.langB : currentList.langA;
+
+  function confirmBulkDelete() {
+    const ids = [...selectedIds];
+    Alert.alert('Delete words', `Remove ${ids.length} word${ids.length === 1 ? '' : 's'} from this list?`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          await deleteWords(listId, ids);
+          clear();
+        },
+      },
+    ]);
+  }
 
   return (
     <Screen padded={false}>
@@ -57,17 +86,23 @@ export default function ListDetail() {
           }}
         >
           <AppText variant="h1" style={{ flexShrink: 1 }}>
-            {currentList.name}
+            {selecting ? `${selectedIds.size} selected` : currentList.name}
           </AppText>
-          <Pressable
-            onPress={() => router.push(`/(app)/lists/${listId}/members`)}
-            style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}
-          >
-            <Icon icon={Users} size={18} color={colors.partner} />
-            <AppText variant="caption" color={colors.partner}>
-              {currentList.memberUids.length}
-            </AppText>
-          </Pressable>
+          {selecting ? (
+            <Pressable onPress={clear} hitSlop={12} accessibilityLabel="Cancel selection">
+              <Icon icon={X} size={22} color={colors.textMuted} />
+            </Pressable>
+          ) : (
+            <Pressable
+              onPress={() => router.push(`/(app)/lists/${listId}/members`)}
+              style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}
+            >
+              <Icon icon={Users} size={18} color={colors.partner} />
+              <AppText variant="caption" color={colors.partner}>
+                {currentList.memberUids.length}
+              </AppText>
+            </Pressable>
+          )}
         </View>
       </View>
 
@@ -75,29 +110,58 @@ export default function ListDetail() {
         data={words}
         keyExtractor={(w) => w.id}
         contentContainerStyle={{ padding: spacing.lg, paddingBottom: 160, gap: spacing.md }}
-        renderItem={({ item }) => (
-          <Card onPress={() => router.push(`/(app)/words/${item.id}?listId=${listId}`)}>
-            <WordPair
-              native={item.terms[currentList.langA] ?? '—'}
-              target={item.terms[currentList.langB] ?? '—'}
-            />
-            {item.notes ? (
-              <View
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  gap: spacing.xs,
-                  marginTop: spacing.sm,
-                }}
-              >
-                <Icon icon={FileText} size={13} color={colors.textMuted} />
-                <AppText variant="caption" color={colors.textMuted} numberOfLines={1}>
-                  {item.notes}
-                </AppText>
+        renderItem={({ item }) => {
+          const display = buildDisplayPair(item.terms, nativeLangCode, targetLangCode);
+          const isSelected = selectedIds.has(item.id);
+          return (
+            <Card
+              onPress={() =>
+                selecting
+                  ? toggle(item.id)
+                  : router.push(`/(app)/words/${item.id}?listId=${listId}`)
+              }
+              onLongPress={() => enter(item.id)}
+              style={isSelected ? { borderColor: colors.you, borderWidth: 1.5 } : undefined}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
+                <View style={{ flex: 1 }}>
+                  <WordPair native={display?.nativeTerm ?? '—'} target={display?.targetTerm ?? '—'} />
+                  {item.notes ? (
+                    <View
+                      style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        gap: spacing.xs,
+                        marginTop: spacing.sm,
+                      }}
+                    >
+                      <Icon icon={FileText} size={13} color={colors.textMuted} />
+                      <AppText variant="caption" color={colors.textMuted} numberOfLines={1}>
+                        {item.notes}
+                      </AppText>
+                    </View>
+                  ) : null}
+                </View>
+                {selecting ? (
+                  <View
+                    style={{
+                      width: 24,
+                      height: 24,
+                      borderRadius: 12,
+                      borderWidth: 1.5,
+                      borderColor: isSelected ? colors.you : colors.border,
+                      backgroundColor: isSelected ? colors.you : 'transparent',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    {isSelected ? <Icon icon={Check} size={16} color="#0B0D10" /> : null}
+                  </View>
+                ) : null}
               </View>
-            ) : null}
-          </Card>
-        )}
+            </Card>
+          );
+        }}
         ListEmptyComponent={
           <EmptyState
             icon={Plus}
@@ -115,15 +179,38 @@ export default function ListDetail() {
           bottom: spacing.xxxl + 32,
         }}
       >
-        <Button
-          title="Add word"
-          icon={Plus}
-          onPress={() =>
-            router.push(
-              `/(app)/words/new?listId=${listId}&langA=${currentList.langA}&langB=${currentList.langB}`,
-            )
-          }
-        />
+        {selecting ? (
+          <View style={{ flexDirection: 'row', gap: spacing.md }}>
+            <Button
+              title={`Copy (${selectedIds.size})`}
+              icon={Copy}
+              variant="secondary"
+              full={false}
+              onPress={() =>
+                router.push(
+                  `/(app)/words/copy?sourceListId=${listId}&ids=${[...selectedIds].join(',')}`,
+                )
+              }
+            />
+            <Button
+              title={`Delete (${selectedIds.size})`}
+              icon={Trash2}
+              variant="danger"
+              full={false}
+              onPress={confirmBulkDelete}
+            />
+          </View>
+        ) : (
+          <Button
+            title="Add word"
+            icon={Plus}
+            onPress={() =>
+              router.push(
+                `/(app)/words/new?listId=${listId}&langA=${currentList.langA}&langB=${currentList.langB}`,
+              )
+            }
+          />
+        )}
       </View>
     </Screen>
   );

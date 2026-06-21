@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, getDocs } from '@react-native-firebase/firestore';
 import { db } from '../firebase/config';
 import { StudyDoc } from '../firebase/schema';
 import { nowMs } from '../domain/clock';

@@ -13,13 +13,17 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     supportsTablet: false,
     bundleIdentifier: 'app.penpal.mobile',
     usesAppleSignIn: true,
+    googleServicesFile: './GoogleService-Info.plist',
   },
   android: {
     package: 'app.penpal.mobile',
+    googleServicesFile: './google-services.json',
   },
   plugins: [
     'expo-router',
     'expo-font',
+    '@react-native-firebase/app',
+    '@react-native-firebase/auth',
     'expo-apple-authentication',
     'expo-secure-store',
     [
@@ -31,9 +35,18 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       'expo-notifications',
       { icon: './assets/notification-icon.png', color: '#ffffff' },
     ],
-    // Firebase / Google-Sign-In pods (AppCheckCore, GoogleUtilities) are Swift pods that
-    // need module maps to integrate as static libraries; this injects use_modular_headers!.
-    './plugins/with-modular-headers',
+    [
+      'expo-image-picker',
+      { photosPermission: 'PenPal needs access to your photos so you can set a profile picture.' },
+    ],
+    // @react-native-firebase requires static frameworks on iOS so that Swift-pod
+    // headers (e.g. FirebaseAuth-Swift.h, pulled in by Firebase.h) resolve for the
+    // RNFB pods. Static frameworks also give gRPC a proper module map, so the old
+    // use_modular_headers! + prebuilt-gRPC workarounds are no longer needed.
+    [
+      'expo-build-properties',
+      { ios: { useFrameworks: 'static' } },
+    ],
   ],
   extra: {
     eas: {

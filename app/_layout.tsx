@@ -40,7 +40,7 @@ export default function RootLayout() {
 }
 
 function AuthGate() {
-  const { user, profile, loading, needsOnboarding } = useAuth();
+  const { user, profile, loading, needsUsername, needsOnboarding } = useAuth();
   const setProfile = useSession((s) => s.setProfile);
   const segments = useSegments();
   const router = useRouter();
@@ -51,11 +51,28 @@ function AuthGate() {
 
   useEffect(() => {
     if (loading) return;
-    const inAuthGroup = segments[0] === '(auth)';
-    if (!user && !inAuthGroup) router.replace('/(auth)/sign-in');
-    else if (user && needsOnboarding) router.replace('/(auth)/onboarding');
-    else if (user && !needsOnboarding && inAuthGroup) router.replace('/(app)/home');
-  }, [user, loading, needsOnboarding, segments]);
+    const seg = segments as string[];
+    const inAuthGroup = seg[0] === '(auth)';
+    const inAppGroup = seg[0] === '(app)';
+
+    if (!user) {
+      // Signed out: get them to sign-in (unless already in the auth flow).
+      if (!inAuthGroup) router.replace('/(auth)/sign-in');
+      return;
+    }
+
+    // Signed in. With persisted auth, a cold start lands here on the root `index`
+    // spinner before the profile has loaded — wait for it so app screens never
+    // render against a null profile, then route to onboarding or the app.
+    if (!profile) return;
+    if (needsUsername) {
+      if (seg[1] !== 'username') router.replace('/(auth)/username');
+    } else if (needsOnboarding) {
+      if (seg[1] !== 'onboarding') router.replace('/(auth)/onboarding');
+    } else if (!inAppGroup) {
+      router.replace('/(app)/home');
+    }
+  }, [user, profile, loading, needsUsername, needsOnboarding, segments]);
 
   useEffect(() => {
     if (user && !needsOnboarding) registerForPush(user.uid);

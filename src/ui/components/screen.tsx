@@ -7,7 +7,9 @@ export function Screen({
   children,
   scroll = false,
   padded = true,
-  edges = ['top'],
+  // Inset top + bottom by default so bottom-anchored content (e.g. study grade
+  // buttons, CTAs) never sits under the Android nav bar or iOS home indicator.
+  edges = ['top', 'bottom'],
   contentStyle,
 }: {
   children: ReactNode;

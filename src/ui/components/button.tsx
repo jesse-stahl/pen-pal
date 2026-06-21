@@ -38,7 +38,10 @@ export function Button({
   const animStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
   const isDisabled = disabled || loading;
 
-  const textColor = variant === 'secondary' || variant === 'ghost' ? colors.text : '#0B0D10';
+  const textColor =
+    variant === 'secondary' || variant === 'ghost' || variant === 'danger'
+      ? colors.text
+      : '#0B0D10';
   const content = (
     <View style={styles.row}>
       {loading ? (
@@ -89,7 +92,7 @@ export function Button({
 function variantStyle(v: Variant): ViewStyle {
   if (v === 'secondary')
     return { backgroundColor: colors.elevated, borderWidth: 1, borderColor: colors.border };
-  if (v === 'danger') return { backgroundColor: colors.dangerSoft };
+  if (v === 'danger') return { backgroundColor: colors.dangerBright };
   return { backgroundColor: 'transparent' };
 }
 

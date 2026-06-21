@@ -1,7 +1,7 @@
 import {
   collection, doc, addDoc, getDoc, updateDoc, deleteDoc,
   serverTimestamp, query, orderBy,
-} from 'firebase/firestore';
+} from '@react-native-firebase/firestore';
 import * as Crypto from 'expo-crypto';
 import { db } from '../firebase/config';
 import { WordDoc } from '../firebase/schema';
@@ -57,4 +57,34 @@ export async function updateWord(params: {
 export async function deleteWord(listId: string, wordId: string): Promise<void> {
   await deleteDoc(doc(db, 'lists', listId, 'words', wordId));
   await bumpWordCount(listId, -1);
+}
+
+export async function deleteWords(listId: string, wordIds: string[]): Promise<void> {
+  for (const id of wordIds) await deleteWord(listId, id);
+}
+
+/**
+ * Copy words into another list, preserving each word's `groupId` so per-user
+ * study progress stays unified across both lists (matches the data model).
+ */
+export async function copyWordsToList(
+  sourceListId: string,
+  targetListId: string,
+  wordIds: string[],
+  byUid: string,
+): Promise<void> {
+  for (const id of wordIds) {
+    const w = await getWord(sourceListId, id);
+    if (!w) continue;
+    await addDoc(collection(db, 'lists', targetListId, 'words'), {
+      groupId: w.groupId, // SAME groupId → unified study progress
+      terms: w.terms,
+      notes: w.notes,
+      createdBy: byUid,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+      updatedBy: byUid,
+    });
+    await bumpWordCount(targetListId, 1);
+  }
 }

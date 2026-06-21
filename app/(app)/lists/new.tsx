@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { View, TextInput, Pressable } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { ChevronLeft } from 'lucide-react-native';
 import { useProfile } from '../../../src/store/session';
 import { createList } from '../../../src/data/lists';
@@ -14,6 +14,12 @@ export default function NewList() {
   const profile = useProfile();
   const router = useRouter();
   const [name, setName] = useState('');
+
+  useFocusEffect(
+    useCallback(() => {
+      return () => setName('');
+    }, []),
+  );
 
   async function create() {
     if (!name.trim()) return;

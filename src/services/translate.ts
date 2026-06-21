@@ -1,18 +1,22 @@
-import { getFunctions, httpsCallable } from 'firebase/functions';
-import { app } from '../firebase/config';
+import { getApp } from '@react-native-firebase/app';
+import { getFunctions, httpsCallable } from '@react-native-firebase/functions';
+
+interface TranslateParams {
+  text: string;
+  source: string;
+  target: string;
+}
 
 interface TranslateResult {
   translatedText: string;
 }
 
-const functions = getFunctions(app, 'asia-southeast1');
+// The translate callable lives in asia-southeast1 (same region as the functions
+// deploy). httpsCallable keeps the Google Translate API key server-side.
+const functions = getFunctions(getApp(), 'asia-southeast1');
 
-export async function translate(params: {
-  text: string;
-  source: string;
-  target: string;
-}): Promise<string> {
-  const callable = httpsCallable<typeof params, TranslateResult>(functions, 'translate');
+export async function translate(params: TranslateParams): Promise<string> {
+  const callable = httpsCallable<TranslateParams, TranslateResult>(functions, 'translate');
   const res = await callable(params);
   return res.data.translatedText;
 }

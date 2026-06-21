@@ -36,14 +36,37 @@ service cloud.firestore {
       }
     }
 
+    // Static invite codes: invites/{code} maps a code → list. Anyone signed in can
+    // read (to join); the code's creator (list owner) creates and rotates/deletes it.
     match /invites/{code} {
-      allow read: if signedIn();                 // needed to look up & accept
+      allow read: if signedIn();
       allow create: if signedIn() && request.resource.data.createdBy == request.auth.uid;
-      // Accepting an invite may only increment `uses` by 1; no other field may change.
+      allow delete: if signedIn() && resource.data.createdBy == request.auth.uid;
+      allow update: if false;
+    }
+
+    // usernames/{username}: reverse lookup for uniqueness + friend search.
+    match /usernames/{username} {
+      allow read: if signedIn();
+      allow create: if signedIn() && request.resource.data.uid == request.auth.uid;
+      allow delete: if signedIn() && resource.data.uid == request.auth.uid;
+      allow update: if false;
+    }
+
+    // friendRequests/{sortedPairId}: sender creates (pending); recipient accepts
+    // (pending→accepted); either party can read or delete (deny / unfriend).
+    match /friendRequests/{id} {
+      allow read: if signedIn()
+        && (request.auth.uid == resource.data.from || request.auth.uid == resource.data.to);
+      allow create: if signedIn()
+        && request.resource.data.from == request.auth.uid
+        && request.resource.data.status == 'pending';
       allow update: if signedIn()
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['uses'])
-        && request.resource.data.uses == resource.data.uses + 1;
-      allow delete: if false;
+        && request.auth.uid == resource.data.to
+        && request.resource.data.status == 'accepted'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt']);
+      allow delete: if signedIn()
+        && (request.auth.uid == resource.data.from || request.auth.uid == resource.data.to);
     }
 
     match /trades/{pairKey} {

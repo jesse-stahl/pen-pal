@@ -17,3 +17,25 @@ export function buildPromptAnswer(
   if (!prompt || !answer) return null;
   return { prompt, answer };
 }
+
+export interface DisplayPair {
+  nativeTerm: string; // shown on top (viewer's native language)
+  targetTerm: string; // shown below (language being learned)
+  audioTerm: string;  // spoken aloud — always the target term
+  audioLang: string;  // language code for speech synthesis
+}
+
+/**
+ * Orient a word for display to a specific viewer: their NATIVE term on top,
+ * the TARGET (non-native) term below, and audio pronounces the target term.
+ */
+export function buildDisplayPair(
+  terms: Record<string, string>,
+  nativeLang: string,
+  targetLang: string
+): DisplayPair | null {
+  const nativeTerm = terms[nativeLang];
+  const targetTerm = terms[targetLang];
+  if (!nativeTerm || !targetTerm) return null;
+  return { nativeTerm, targetTerm, audioTerm: targetTerm, audioLang: targetLang };
+}

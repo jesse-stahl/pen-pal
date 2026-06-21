@@ -1,6 +1,32 @@
-import { buildPromptAnswer } from '../direction';
+import { buildPromptAnswer, buildDisplayPair } from '../direction';
 
 const terms = { th: 'หมา', en: 'dog' };
+
+describe('buildDisplayPair', () => {
+  const pair = { en: 'hello', th: 'สวัสดี' };
+
+  test('native on top, target gets audio, for a Thai native', () => {
+    expect(buildDisplayPair(pair, 'th', 'en')).toEqual({
+      nativeTerm: 'สวัสดี',
+      targetTerm: 'hello',
+      audioTerm: 'hello',
+      audioLang: 'en',
+    });
+  });
+
+  test('native on top for an English native', () => {
+    expect(buildDisplayPair(pair, 'en', 'th')).toEqual({
+      nativeTerm: 'hello',
+      targetTerm: 'สวัสดี',
+      audioTerm: 'สวัสดี',
+      audioLang: 'th',
+    });
+  });
+
+  test('returns null when the viewer-language pair is missing', () => {
+    expect(buildDisplayPair({ es: 'hola' }, 'th', 'en')).toBeNull();
+  });
+});
 
 test('English learner is prompted in native (their own lang) and recalls target', () => {
   // user native en, target th -> shown English, must recall Thai

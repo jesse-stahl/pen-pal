@@ -21,14 +21,19 @@ export default function Results() {
   const accent = caughtUp ? colors.partner : summary.accuracy >= 80 ? colors.success : colors.you;
 
   function replay() {
-    if (mode && listId) {
-      clear();
-      router.replace(`/(app)/study/${mode}?listId=${listId}`);
-    }
+    if (!mode) return;
+    clear();
+    // listId is the 'all' sentinel for an All-lists session; replay without a
+    // listId so the deck spans every list again instead of a list named "all".
+    const target =
+      listId && listId !== 'all'
+        ? `/(app)/study/${mode}?listId=${listId}`
+        : `/(app)/study/${mode}`;
+    router.replace(target);
   }
   function done() {
     clear();
-    router.replace('/(app)/study');
+    router.replace('/(app)/play');
   }
 
   return (

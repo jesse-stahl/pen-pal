@@ -8,6 +8,7 @@ export interface SrsState {
   dueAt: number;        // epoch ms
   lastGrade: number;
   lastReviewedAt: number;
+  learned: boolean;     // manual "fully learned" flag; never set by scheduling
 }
 
 export function initialSrs(now: number): SrsState {
@@ -18,6 +19,7 @@ export function initialSrs(now: number): SrsState {
     dueAt: now,         // due immediately
     lastGrade: -1,
     lastReviewedAt: 0,
+    learned: false,
   };
 }
 
@@ -31,6 +33,7 @@ export function isDue(s: SrsState, now: number): boolean {
 export function schedule(prev: SrsState, grade: number, now: number): SrsState {
   const g = Math.max(0, Math.min(5, Math.round(grade)));
   let { ease, intervalDays, repetitions } = prev;
+  const { learned } = prev;
 
   if (g < 3) {
     repetitions = 0;
@@ -53,5 +56,6 @@ export function schedule(prev: SrsState, grade: number, now: number): SrsState {
     dueAt: now + intervalDays * DAY_MS,
     lastGrade: g,
     lastReviewedAt: now,
+    learned,
   };
 }

@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { LANGUAGES } from '../../src/domain/languages';
 import { setLanguages } from '../../src/data/users';
 import { useAuth } from '../../src/hooks/use-auth';
@@ -16,6 +16,15 @@ export default function Onboarding() {
   const [nativeLang, setNative] = useState('');
   const [targetLang, setTarget] = useState('');
   const sameError = nativeLang !== '' && nativeLang === targetLang;
+
+  useFocusEffect(
+    useCallback(() => {
+      return () => {
+        setNative('');
+        setTarget('');
+      };
+    }, []),
+  );
 
   async function save() {
     if (!user || !nativeLang || !targetLang || nativeLang === targetLang) return;

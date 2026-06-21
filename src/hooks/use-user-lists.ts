@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { onSnapshot } from 'firebase/firestore';
+import { onSnapshot } from '@react-native-firebase/firestore';
 import { userListsQuery } from '../data/lists';
 import { ListDoc } from '../firebase/schema';
 
