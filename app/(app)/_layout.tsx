@@ -1,6 +1,8 @@
 import { Tabs } from 'expo-router';
 import { ActivityIndicator, View } from 'react-native';
 import { useSession } from '../../src/store/session';
+import { FloatingTabBar } from '../../src/ui/components/floating-tab-bar';
+import { colors } from '../../src/ui/theme';
 
 export default function AppLayout() {
   // Don't mount tab screens until the profile is in the session — they call useProfile(),
@@ -8,17 +10,23 @@ export default function AppLayout() {
   const profile = useSession((s) => s.profile);
   if (!profile) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center' }}>
-        <ActivityIndicator />
+      <View style={{ flex: 1, justifyContent: 'center', backgroundColor: colors.bg }}>
+        <ActivityIndicator color={colors.you} />
       </View>
     );
   }
   return (
-    <Tabs>
-      <Tabs.Screen name="lists/index" options={{ title: 'Lists' }} />
-      <Tabs.Screen name="study/index" options={{ title: 'Study' }} />
-      <Tabs.Screen name="stats" options={{ title: 'Stats' }} />
-      <Tabs.Screen name="settings" options={{ title: 'Settings' }} />
+    <Tabs
+      tabBar={(props) => <FloatingTabBar {...props} />}
+      screenOptions={{
+        headerShown: false,
+        sceneStyle: { backgroundColor: colors.bg },
+      }}
+    >
+      <Tabs.Screen name="home" />
+      <Tabs.Screen name="lists/index" />
+      <Tabs.Screen name="study/index" />
+      <Tabs.Screen name="profile" />
       {/* hidden routes */}
       <Tabs.Screen name="lists/[listId]" options={{ href: null }} />
       <Tabs.Screen name="lists/new" options={{ href: null }} />
@@ -29,6 +37,7 @@ export default function AppLayout() {
       <Tabs.Screen name="study/multiple-choice" options={{ href: null }} />
       <Tabs.Screen name="study/typing" options={{ href: null }} />
       <Tabs.Screen name="study/matching" options={{ href: null }} />
+      <Tabs.Screen name="study/results" options={{ href: null }} />
       <Tabs.Screen name="join" options={{ href: null }} />
     </Tabs>
   );

@@ -1,8 +1,14 @@
 import { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet } from 'react-native';
+import { View, TextInput, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
+import { ChevronLeft } from 'lucide-react-native';
 import { acceptInvite } from '../../src/data/invites';
 import { useProfile } from '../../src/store/session';
+import { Screen } from '../../src/ui/components/screen';
+import { AppText } from '../../src/ui/components/app-text';
+import { Button } from '../../src/ui/components/button';
+import { Icon } from '../../src/ui/components/icon';
+import { colors, spacing, radius } from '../../src/ui/theme';
 
 const MESSAGES: Record<string, string> = {
   invalid: 'That code is not valid.',
@@ -25,25 +31,48 @@ export default function Join() {
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.label}>Enter invite code</Text>
+    <Screen>
+      <Pressable onPress={() => router.back()} hitSlop={12} style={{ marginTop: spacing.sm }}>
+        <Icon icon={ChevronLeft} color={colors.textMuted} />
+      </Pressable>
+      <AppText variant="h1" style={{ marginTop: spacing.lg }}>
+        Join a list
+      </AppText>
+      <AppText variant="body" color={colors.textMuted} style={{ marginTop: spacing.xs }}>
+        Enter the invite code your partner shared.
+      </AppText>
+
       <TextInput
-        style={styles.input}
+        style={{
+          backgroundColor: colors.surface,
+          borderWidth: 1,
+          borderColor: colors.border,
+          borderRadius: radius.lg,
+          padding: spacing.lg,
+          marginTop: spacing.xl,
+          color: colors.text,
+          fontFamily: 'Inter_700Bold',
+          fontSize: 24,
+          letterSpacing: 4,
+          textAlign: 'center',
+        }}
         value={code}
         onChangeText={setCode}
         placeholder="PNK-7Q2"
+        placeholderTextColor={colors.textMuted}
         autoCapitalize="characters"
         autoFocus
       />
-      {!!error && <Text style={styles.error}>{error}</Text>}
-      <Button title="Join list" onPress={join} disabled={!code.trim()} />
-    </View>
+
+      {error ? (
+        <AppText variant="caption" color={colors.danger} style={{ marginTop: spacing.md }}>
+          {error}
+        </AppText>
+      ) : null}
+
+      <View style={{ marginTop: spacing.xl }}>
+        <Button title="Join list" onPress={join} disabled={!code.trim()} />
+      </View>
+    </Screen>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, gap: 12 },
-  label: { fontWeight: '600' },
-  input: { borderWidth: 1, borderColor: '#d1d5db', borderRadius: 8, padding: 12, fontSize: 20, letterSpacing: 2, textAlign: 'center' },
-  error: { color: '#dc2626' },
-});

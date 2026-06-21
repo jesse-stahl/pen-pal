@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import {
   onAuthStateChanged,
   signInWithCredential,
@@ -27,28 +27,59 @@ async function googleIdToken(): Promise<string | null> {
   return result.type === 'success' ? result.data.idToken : null;
 }
 
-export function useAuth() {
+interface AuthContextValue {
+  user: User | null;
+  profile: UserDoc | null;
+  loading: boolean;
+  needsOnboarding: boolean;
+  signInWithGoogle: () => Promise<void>;
+  signInWithApple: () => Promise<void>;
+  signOut: () => Promise<void>;
+  refreshProfile: () => Promise<void>;
+}
+
+const AuthContext = createContext<AuthContextValue | null>(null);
+
+// Single source of truth for auth state. Provided once at the app root so the gate
+// (app/_layout.tsx) and every screen share one profile — otherwise a screen that
+// updates the profile (e.g. onboarding saving languages) wouldn't be visible to the
+// gate, which would bounce the user back.
+export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserDoc | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Resolve `loading` as soon as the auth state is known — never block the gate on a
+  // Firestore read. With persisted auth, a cold start restores a user and an awaited
+  // profile fetch here would freeze the whole app on the loading spinner if that read
+  // stalls. Clearing user state happens here; the profile loads in the effect below.
   useEffect(() => {
-    return onAuthStateChanged(auth, async (u) => {
+    return onAuthStateChanged(auth, (u) => {
       setUser(u);
-      if (u) {
-        await createUserIfMissing({
-          uid: u.uid,
-          displayName: u.displayName ?? 'Learner',
-          email: u.email,
-          photoURL: u.photoURL,
-        });
-        setProfile(await getUser(u.uid));
-      } else {
-        setProfile(null);
-      }
       setLoading(false);
+      if (!u) setProfile(null);
     });
   }, []);
+
+  // Lazily create + load this user's profile whenever the signed-in user changes. Runs
+  // independently of `loading`, so the UI can route while the profile resolves.
+  useEffect(() => {
+    if (!user) return;
+    let active = true;
+    (async () => {
+      await createUserIfMissing({
+        uid: user.uid,
+        displayName: user.displayName ?? 'Learner',
+        email: user.email,
+        photoURL: user.photoURL,
+      });
+      const loaded = await getUser(user.uid);
+      if (active) setProfile(loaded);
+    })();
+    return () => {
+      active = false;
+    };
+  }, [user]);
 
   async function signInWithGoogle() {
     const idToken = await googleIdToken();
@@ -70,7 +101,7 @@ export function useAuth() {
     await signInWithCredential(auth, credential);
   }
 
-  return {
+  const value: AuthContextValue = {
     user,
     profile,
     loading,
@@ -78,6 +109,16 @@ export function useAuth() {
     signInWithGoogle,
     signInWithApple,
     signOut: () => fbSignOut(auth),
-    refreshProfile: async () => user && setProfile(await getUser(user.uid)),
+    refreshProfile: async () => {
+      if (user) setProfile(await getUser(user.uid));
+    },
   };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+export function useAuth(): AuthContextValue {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error('useAuth must be used within an AuthProvider');
+  return ctx;
 }

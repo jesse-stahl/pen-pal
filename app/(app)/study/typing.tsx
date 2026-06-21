@@ -1,72 +1,127 @@
-import { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, ActivityIndicator } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
+import { useCallback, useEffect, useState } from 'react';
+import { View, TextInput, ActivityIndicator } from 'react-native';
+import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { useDueCards } from '../../../src/hooks/use-due-cards';
 import { isAcceptable } from '../../../src/domain/answer-match';
 import { gradeStudy } from '../../../src/data/progress';
 import { recordStudyDay } from '../../../src/data/stats';
 import { useProfile } from '../../../src/store/session';
+import { useStudySession } from '../../../src/store/study-session';
+import { Screen } from '../../../src/ui/components/screen';
+import { AppText } from '../../../src/ui/components/app-text';
+import { Button } from '../../../src/ui/components/button';
+import { StudyHeader } from '../../../src/ui/components/study-header';
+import { colors, spacing, radius } from '../../../src/ui/theme';
 
 export default function Typing() {
   const { listId } = useLocalSearchParams<{ listId: string }>();
   const profile = useProfile();
+  const router = useRouter();
   const { cards, loading } = useDueCards(listId);
+  const { start, log } = useStudySession();
   const [i, setI] = useState(0);
   const [input, setInput] = useState('');
   const [result, setResult] = useState<null | 'correct' | 'wrong'>(null);
 
-  if (loading) return <View style={styles.c}><ActivityIndicator /></View>;
-  if (cards.length === 0) return <View style={styles.c}><Text style={styles.done}>Nothing due. 🎉</Text></View>;
-  if (i >= cards.length) return <View style={styles.c}><Text style={styles.done}>Done! 🎉</Text></View>;
+  useEffect(() => {
+    if (!loading && cards.length > 0 && listId) start(cards.length, 'typing', listId);
+  }, [loading, cards.length, listId, start]);
+  useEffect(() => {
+    if (!loading && cards.length === 0) router.replace('/(app)/study/results');
+  }, [loading, cards.length, router]);
+  // Each focus starts a fresh session; this Tabs screen stays mounted between visits.
+  useFocusEffect(
+    useCallback(() => {
+      setI(0);
+      setInput('');
+      setResult(null);
+    }, []),
+  );
 
+  if (loading) {
+    return (
+      <Screen contentStyle={{ justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator color={colors.you} />
+      </Screen>
+    );
+  }
+  if (cards.length === 0) return null;
   const card = cards[i];
 
   async function check() {
     const ok = isAcceptable(card.answer, input);
     setResult(ok ? 'correct' : 'wrong');
+    log({ prompt: card.prompt, answer: card.answer, correct: ok });
     await gradeStudy(profile.uid, card.groupId, ok ? 4 : 1);
   }
-  function next() {
+
+  async function next() {
     setInput('');
     setResult(null);
-    if (i + 1 >= cards.length) recordStudyDay(profile.uid);
+    if (i + 1 >= cards.length) {
+      await recordStudyDay(profile.uid);
+      router.replace('/(app)/study/results');
+      return;
+    }
     setI((n) => n + 1);
   }
 
+  const borderColor =
+    result === 'correct' ? colors.success : result === 'wrong' ? colors.danger : colors.border;
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.progress}>{i + 1} / {cards.length}</Text>
-      <Text style={styles.prompt}>{card.prompt}</Text>
-      <TextInput
-        style={styles.input}
-        value={input}
-        onChangeText={setInput}
-        editable={result === null}
-        placeholder="Type the translation"
-        autoFocus
-      />
-      {result === null ? (
-        <Button title="Check" onPress={check} disabled={!input.trim()} />
-      ) : (
-        <View>
-          <Text style={[styles.feedback, result === 'correct' ? styles.ok : styles.bad]}>
+    <Screen>
+      <StudyHeader index={i} total={cards.length} />
+      <View style={{ flex: 1, justifyContent: 'center' }}>
+        <AppText variant="caption" color={colors.textMuted} style={{ textAlign: 'center' }}>
+          Type the translation
+        </AppText>
+        <AppText
+          variant="h1"
+          color={colors.you}
+          style={{ textAlign: 'center', marginTop: spacing.md, marginBottom: spacing.xxl }}
+        >
+          {card.prompt}
+        </AppText>
+
+        <TextInput
+          style={{
+            backgroundColor: colors.surface,
+            borderWidth: 1.5,
+            borderColor,
+            borderRadius: radius.lg,
+            padding: spacing.lg,
+            fontSize: 20,
+            fontFamily: 'Inter_600SemiBold',
+            color: colors.text,
+            textAlign: 'center',
+          }}
+          placeholderTextColor={colors.textMuted}
+          value={input}
+          onChangeText={setInput}
+          editable={result === null}
+          placeholder="Your answer"
+          autoFocus
+        />
+
+        {result !== null ? (
+          <AppText
+            variant="bodyStrong"
+            color={result === 'correct' ? colors.success : colors.danger}
+            style={{ textAlign: 'center', marginTop: spacing.lg }}
+          >
             {result === 'correct' ? 'Correct!' : `Answer: ${card.answer}`}
-          </Text>
-          <Button title="Next" onPress={next} />
+          </AppText>
+        ) : null}
+
+        <View style={{ marginTop: spacing.xl }}>
+          {result === null ? (
+            <Button title="Check" onPress={check} disabled={!input.trim()} />
+          ) : (
+            <Button title="Next" onPress={next} />
+          )}
         </View>
-      )}
-    </View>
+      </View>
+    </Screen>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16 },
-  c: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  progress: { textAlign: 'center', color: '#6b7280', marginBottom: 12 },
-  prompt: { fontSize: 32, fontWeight: '700', textAlign: 'center', marginVertical: 32 },
-  input: { borderWidth: 1, borderColor: '#d1d5db', borderRadius: 10, padding: 16, fontSize: 20, textAlign: 'center', marginBottom: 16 },
-  feedback: { fontSize: 20, textAlign: 'center', marginBottom: 12 },
-  ok: { color: '#16a34a' },
-  bad: { color: '#dc2626' },
-  done: { fontSize: 22, fontWeight: '700' },
-});

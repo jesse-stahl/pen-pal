@@ -8,7 +8,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   scheme: 'penpal',
   version: '0.1.0',
   orientation: 'portrait',
-  userInterfaceStyle: 'automatic',
+  userInterfaceStyle: 'dark',
   ios: {
     supportsTablet: false,
     bundleIdentifier: 'app.penpal.mobile',
@@ -19,6 +19,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   plugins: [
     'expo-router',
+    'expo-font',
     'expo-apple-authentication',
     'expo-secure-store',
     [
@@ -30,6 +31,9 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       'expo-notifications',
       { icon: './assets/notification-icon.png', color: '#ffffff' },
     ],
+    // Firebase / Google-Sign-In pods (AppCheckCore, GoogleUtilities) are Swift pods that
+    // need module maps to integrate as static libraries; this injects use_modular_headers!.
+    './plugins/with-modular-headers',
   ],
   extra: {
     eas: {
