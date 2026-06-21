@@ -13,11 +13,14 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     supportsTablet: false,
     bundleIdentifier: 'app.penpal.mobile',
     usesAppleSignIn: true,
-    googleServicesFile: './GoogleService-Info.plist',
+    // The config file is gitignored, so it isn't in EAS's cloud git checkout; EAS
+    // provides it at build time via a secret file env var. Fall back to the local
+    // path for local prebuilds.
+    googleServicesFile: process.env.GOOGLE_SERVICE_INFO_PLIST ?? './GoogleService-Info.plist',
   },
   android: {
     package: 'app.penpal.mobile',
-    googleServicesFile: './google-services.json',
+    googleServicesFile: process.env.GOOGLE_SERVICES_JSON ?? './google-services.json',
   },
   plugins: [
     'expo-router',
