@@ -28,6 +28,24 @@ Backend deploy:
 - `npx firebase deploy --only firestore:rules,firestore:indexes`
 - `npx firebase deploy --only functions`
 
+## Inspecting Firestore (Firebase MCP tools)
+
+The Firebase MCP plugin is available for read-only inspection of the live `pen-pal-dev` database. Use these instead of guessing at data shape — they are deferred tools, so load them first with `ToolSearch` (`select:<tool_name>`), then call them.
+
+- **Project:** `pen-pal-dev` · **Database:** `(default)` · **Region:** `asia-southeast1`.
+- **Document path prefix** (for the `name`/`parent` params): `projects/pen-pal-dev/databases/(default)/documents`.
+- **Top-level collections:** `users`, `lists`, `invites`. Sub-collections: `users/{uid}/study`, `lists/{listId}/words`.
+
+Querying / reading tools:
+
+- `firestore_list_collections` — list collection IDs under a document (or the root). `parent: projects/pen-pal-dev/databases/(default)/documents` for top-level. Use to discover sub-collections (e.g. pass a `users/{uid}` path to see `study`).
+- `firestore_query_collection` — **the main query tool.** Takes a `collection_path` (e.g. `lists` or `lists/{listId}/words`) and a `filters` array; each filter is `{ field, op, compare_value }` where `op` is `EQUAL`/`GREATER_THAN_OR_EQUAL`/`ARRAY_CONTAINS`/`IN`/etc. and `compare_value` is a typed wrapper (`string_value`, `integer_value`, `boolean_value`, `double_value`, `string_array_value`). Supports `order` (`{ orderBy, orderByDirection }`) and `limit` (default 10). Composite queries may need a matching index in `firestore.indexes.json`.
+- `firestore_get_document` — fetch one doc by full resource `name` (e.g. `projects/pen-pal-dev/databases/(default)/documents/lists/{listId}`). Optional `mask.fieldPaths` to limit returned fields.
+- `firestore_list_documents` — page through a collection without filters; `parent` + `collectionId`, supports `pageSize`/`pageToken`/`orderBy`/`mask`.
+- `firestore_list_indexes` / `firestore_get_index` — inspect composite indexes (`parent: projects/pen-pal-dev/databases/(default)/collectionGroups/{collectionId}`). Useful before adding a query that needs one.
+
+Other plugin tools exist for **writes** (`firestore_add_document`, `firestore_update_document`, `firestore_delete_document`), rules (`firebase_get_security_rules`, `firebase_validate_security_rules`), indexes (`firestore_create_index`), auth (`auth_get_users`, `auth_update_user`), and function logs (`functions_get_logs`). **Do not mutate live data without explicit user approval** — prefer the read-only query tools above for investigation.
+
 ## Architecture (big picture)
 
 **Three cooperating pieces:**

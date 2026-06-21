@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import { View, TextInput, Alert, Pressable } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { doc, onSnapshot } from 'firebase/firestore';
+import { doc, onSnapshot } from '@react-native-firebase/firestore';
 import * as Speech from 'expo-speech';
-import { Volume2, Trash2, ChevronLeft } from 'lucide-react-native';
+import { Volume2, Trash2, ChevronLeft, CheckSquare, Square } from 'lucide-react-native';
 import { db } from '../../../src/firebase/config';
 import { ListDoc, WordDoc } from '../../../src/firebase/schema';
 import { getWord, updateWord, deleteWord } from '../../../src/data/words';
+import { getStudy, setLearned } from '../../../src/data/progress';
 import { getLanguageName } from '../../../src/domain/languages';
 import { useProfile } from '../../../src/store/session';
 import { Screen } from '../../../src/ui/components/screen';
@@ -22,26 +23,39 @@ export default function EditWord() {
   const router = useRouter();
   const [list, setList] = useState<ListDoc | null>(null);
   const [word, setWord] = useState<WordDoc | null>(null);
-  const [a, setA] = useState('');
-  const [b, setB] = useState('');
+  const [nativeText, setNativeText] = useState('');
+  const [targetText, setTargetText] = useState('');
   const [notes, setNotes] = useState('');
+  const [learned, setLearnedState] = useState(false);
 
   useEffect(() => {
     if (!listId) return;
     return onSnapshot(doc(db, 'lists', listId), (s) => setList({ id: s.id, ...s.data() } as ListDoc));
   }, [listId]);
 
+  // Orient to the viewer's native language: of the list's two languages, show the
+  // viewer's native one first (fall back to langA), the other is their target.
+  const nativeLangCode = list
+    ? [list.langA, list.langB].includes(profile.nativeLang)
+      ? profile.nativeLang
+      : list.langA
+    : '';
+  const targetLangCode = list ? (nativeLangCode === list.langA ? list.langB : list.langA) : '';
+
   useEffect(() => {
     (async () => {
-      if (!listId || !wordId) return;
+      if (!listId || !wordId || !list) return;
       const w = await getWord(listId, wordId);
-      if (w && list) {
+      if (w) {
         setWord(w);
-        setA(w.terms[list.langA] ?? '');
-        setB(w.terms[list.langB] ?? '');
+        setNativeText(w.terms[nativeLangCode] ?? '');
+        setTargetText(w.terms[targetLangCode] ?? '');
         setNotes(w.notes ?? '');
+        const st = await getStudy(profile.uid, w.groupId);
+        setLearnedState(st?.learned === true);
       }
     })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [listId, wordId, list?.id]);
 
   if (!listId || !wordId || !list || !word) {
@@ -53,13 +67,12 @@ export default function EditWord() {
       </Screen>
     );
   }
-  const currentList = list;
 
   async function save() {
     await updateWord({
       listId,
       wordId,
-      terms: { [currentList.langA]: a.trim(), [currentList.langB]: b.trim() },
+      terms: { [nativeLangCode]: nativeText.trim(), [targetLangCode]: targetText.trim() },
       notes: notes.trim(),
       updatedBy: profile.uid,
     });
@@ -87,29 +100,61 @@ export default function EditWord() {
       </Pressable>
 
       <Card style={{ marginTop: spacing.lg, alignItems: 'center', gap: spacing.sm }}>
+        {/* Native term on top (the viewer's own language). */}
         <AppText variant="h1" color={colors.you} style={{ textAlign: 'center' }}>
-          {a || '—'}
+          {nativeText || '—'}
         </AppText>
+        {/* Target term below, with audio spoken in the target (learned) language. */}
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
           <AppText variant="h2" color={colors.partner} style={{ textAlign: 'center' }}>
-            {b || '—'}
+            {targetText || '—'}
           </AppText>
           <Pressable
             accessibilityLabel="Read aloud"
             hitSlop={10}
-            onPress={() => b && Speech.speak(b, { language: currentList.langB })}
+            onPress={() => targetText && Speech.speak(targetText, { language: targetLangCode })}
           >
             <Icon icon={Volume2} size={22} color={colors.partner} />
           </Pressable>
         </View>
       </Card>
 
-      <Field label={getLanguageName(currentList.langA)} value={a} onChange={setA} />
-      <Field label={getLanguageName(currentList.langB)} value={b} onChange={setB} />
+      <Field label={getLanguageName(nativeLangCode)} value={nativeText} onChange={setNativeText} />
+      <Field label={getLanguageName(targetLangCode)} value={targetText} onChange={setTargetText} />
       <Field label="Notes" value={notes} onChange={setNotes} multiline />
 
+      <Card style={{ marginTop: spacing.lg }}>
+        <Pressable
+          onPress={async () => {
+            const next = !learned;
+            setLearnedState(next);
+            try {
+              await setLearned(profile.uid, word.groupId, next);
+            } catch {
+              setLearnedState(!next); // revert optimistic update on failure
+            }
+          }}
+          style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
+        >
+          <View style={{ flexShrink: 1, paddingRight: spacing.md }}>
+            <AppText variant="body">Mark as fully learned</AppText>
+            <AppText variant="caption" color={colors.textMuted}>
+              Hides it from study; find it under Review.
+            </AppText>
+          </View>
+          <Icon
+            icon={learned ? CheckSquare : Square}
+            color={learned ? colors.success : colors.textMuted}
+          />
+        </Pressable>
+      </Card>
+
       <View style={{ gap: spacing.md, marginTop: spacing.xl }}>
-        <Button title="Save changes" onPress={save} disabled={!a.trim() || !b.trim()} />
+        <Button
+          title="Save changes"
+          onPress={save}
+          disabled={!nativeText.trim() || !targetText.trim()}
+        />
         <Button title="Delete word" icon={Trash2} variant="danger" onPress={confirmDelete} />
       </View>
     </Screen>

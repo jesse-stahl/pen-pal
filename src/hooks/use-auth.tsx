@@ -3,15 +3,17 @@ import {
   onAuthStateChanged,
   signInWithCredential,
   GoogleAuthProvider,
-  OAuthProvider,
+  AppleAuthProvider,
   signOut as fbSignOut,
-  User,
-} from 'firebase/auth';
+  FirebaseAuthTypes,
+} from '@react-native-firebase/auth';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { auth } from '../firebase/config';
 import { createUserIfMissing, getUser } from '../data/users';
 import { UserDoc } from '../firebase/schema';
+
+type User = FirebaseAuthTypes.User;
 
 // Native Google sign-in (Credential Manager on Android, native sheet on iOS). Replaces the
 // expo-auth-session browser flow, which Google now rejects for Android clients ("Custom URI
@@ -31,6 +33,7 @@ interface AuthContextValue {
   user: User | null;
   profile: UserDoc | null;
   loading: boolean;
+  needsUsername: boolean;
   needsOnboarding: boolean;
   signInWithGoogle: () => Promise<void>;
   signInWithApple: () => Promise<void>;
@@ -96,8 +99,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       ],
     });
     if (!cred.identityToken) throw new Error('Apple sign-in returned no identity token');
-    const provider = new OAuthProvider('apple.com');
-    const credential = provider.credential({ idToken: cred.identityToken });
+    const credential = AppleAuthProvider.credential(cred.identityToken);
     await signInWithCredential(auth, credential);
   }
 
@@ -105,6 +107,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     user,
     profile,
     loading,
+    needsUsername: !!user && !!profile && !profile.username,
     needsOnboarding: !!user && !!profile && (!profile.nativeLang || !profile.targetLang),
     signInWithGoogle,
     signInWithApple,

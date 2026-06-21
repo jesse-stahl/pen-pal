@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { View, Pressable, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
-import { useDueCards } from '../../../src/hooks/use-due-cards';
+import { useStudyDeck } from '../../../src/hooks/use-study-deck';
 import { buildMatchingRound } from '../../../src/domain/quiz';
 import { gradeStudy } from '../../../src/data/progress';
 import { recordStudyDay } from '../../../src/data/stats';
@@ -13,17 +13,17 @@ import { StudyHeader } from '../../../src/ui/components/study-header';
 import { colors, spacing, radius } from '../../../src/ui/theme';
 
 export default function Matching() {
-  const { listId } = useLocalSearchParams<{ listId: string }>();
+  const { listId, mode } = useLocalSearchParams<{ listId?: string; mode?: string }>();
   const profile = useProfile();
   const router = useRouter();
-  const { cards, loading } = useDueCards(listId);
+  const { cards, loading } = useStudyDeck(listId, mode === 'review' ? 'review' : 'normal');
   const round = useMemo(() => (cards.length ? buildMatchingRound(cards, 5) : null), [cards]);
   const { start, log } = useStudySession();
   const [selected, setSelected] = useState<string | null>(null);
   const [matched, setMatched] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    if (!loading && round && listId) start(round.prompts.length, 'matching', listId);
+    if (!loading && round) start(round.prompts.length, 'matching', listId ?? 'all');
   }, [loading, round, listId, start]);
   useEffect(() => {
     if (!loading && cards.length === 0) router.replace('/(app)/study/results');

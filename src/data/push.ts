@@ -1,4 +1,4 @@
-import { doc, updateDoc, arrayUnion } from 'firebase/firestore';
+import { doc, updateDoc, arrayUnion } from '@react-native-firebase/firestore';
 import { db } from '../firebase/config';
 
 export async function savePushToken(uid: string, token: string): Promise<void> {

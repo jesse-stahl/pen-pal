@@ -53,3 +53,12 @@ test('dueAt advances by intervalDays', () => {
   expect(isDue(s, NOW)).toBe(false);
   expect(isDue(s, NOW + 86400000)).toBe(true);
 });
+
+test('initialSrs starts not learned', () => {
+  expect(initialSrs(NOW).learned).toBe(false);
+});
+
+test('schedule preserves the learned flag', () => {
+  const s: SrsState = { ...initialSrs(NOW), learned: true };
+  expect(schedule(s, 4, NOW).learned).toBe(true);
+});

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { collection, getDocs, doc, getDoc, query, where } from 'firebase/firestore';
+import { collection, getDocs, doc, getDoc, query, where } from '@react-native-firebase/firestore';
 import { db } from '../firebase/config';
 import { TradeDoc, UserDoc } from '../firebase/schema';
 

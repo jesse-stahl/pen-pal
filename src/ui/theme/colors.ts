@@ -17,6 +17,7 @@ export const colors = {
   warningSoft: 'rgba(251,146,60,0.16)',
   danger: '#F87171',
   dangerSoft: 'rgba(248,113,113,0.16)',
+  dangerBright: '#FF3B30', // solid vivid red for destructive buttons
 
   // Text
   text: '#FFFFFF',

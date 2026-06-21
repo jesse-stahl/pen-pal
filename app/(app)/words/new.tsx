@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import { View, TextInput, Pressable, Alert } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useState, useCallback } from 'react';
+import { View, TextInput, Pressable, Alert, ActivityIndicator } from 'react-native';
+import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { ChevronLeft, Sparkles } from 'lucide-react-native';
 import { getLanguageName } from '../../../src/domain/languages';
 import { translate } from '../../../src/services/translate';
@@ -20,10 +20,25 @@ export default function NewWord() {
   }>();
   const profile = useProfile();
   const router = useRouter();
-  const [a, setA] = useState('');
-  const [b, setB] = useState('');
+  const [nativeText, setNativeText] = useState('');
+  const [targetText, setTargetText] = useState('');
   const [notes, setNotes] = useState('');
-  const [busy, setBusy] = useState(false);
+  const [busy, setBusy] = useState(false); // translation in flight
+  const [saving, setSaving] = useState(false); // add-word write in flight
+
+  // Clear the form when the screen loses focus. Expo Router keeps stack screens
+  // mounted, so without this the next "Add word" would show the previous entry.
+  useFocusEffect(
+    useCallback(() => {
+      return () => {
+        setNativeText('');
+        setTargetText('');
+        setNotes('');
+        setBusy(false);
+        setSaving(false);
+      };
+    }, []),
+  );
 
   // Route params are typed as string but can be missing at runtime; guard once
   // so the rest of the component (and its closures) sees them as defined.
@@ -37,13 +52,22 @@ export default function NewWord() {
     );
   }
 
-  async function autoTranslate(from: 'A' | 'B') {
+  // Orient the form to the viewer's native language: of the list's two languages,
+  // the viewer's native one is the top field (fall back to langA), the other target.
+  const nativeLangCode = [langA, langB].includes(profile.nativeLang) ? profile.nativeLang : langA;
+  const targetLangCode = nativeLangCode === langA ? langB : langA;
+
+  async function autoTranslate(from: 'native' | 'target') {
     setBusy(true);
     try {
-      if (from === 'A' && a.trim()) {
-        setB(await translate({ text: a.trim(), source: langA, target: langB }));
-      } else if (from === 'B' && b.trim()) {
-        setA(await translate({ text: b.trim(), source: langB, target: langA }));
+      if (from === 'native' && nativeText.trim()) {
+        setTargetText(
+          await translate({ text: nativeText.trim(), source: nativeLangCode, target: targetLangCode }),
+        );
+      } else if (from === 'target' && targetText.trim()) {
+        setNativeText(
+          await translate({ text: targetText.trim(), source: targetLangCode, target: nativeLangCode }),
+        );
       }
     } catch {
       Alert.alert('Translation failed', 'You can still type it manually.');
@@ -53,14 +77,19 @@ export default function NewWord() {
   }
 
   async function save() {
-    if (!a.trim() || !b.trim()) return;
-    await addWord({
-      listIds: [listId],
-      terms: { [langA]: a.trim(), [langB]: b.trim() },
-      notes: notes.trim(),
-      createdBy: profile.uid,
-    });
-    router.back();
+    if (saving || !nativeText.trim() || !targetText.trim()) return;
+    setSaving(true);
+    try {
+      await addWord({
+        listIds: [listId],
+        terms: { [nativeLangCode]: nativeText.trim(), [targetLangCode]: targetText.trim() },
+        notes: notes.trim(),
+        createdBy: profile.uid,
+      });
+      router.back();
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -73,20 +102,20 @@ export default function NewWord() {
       </AppText>
 
       <TranslatableField
-        label={getLanguageName(langA)}
+        label={getLanguageName(nativeLangCode)}
         accent={colors.you}
-        value={a}
-        onChange={setA}
-        onTranslate={() => autoTranslate('A')}
+        value={nativeText}
+        onChange={setNativeText}
+        onTranslate={() => autoTranslate('native')}
         busy={busy}
         autoFocus
       />
       <TranslatableField
-        label={getLanguageName(langB)}
+        label={getLanguageName(targetLangCode)}
         accent={colors.partner}
-        value={b}
-        onChange={setB}
-        onTranslate={() => autoTranslate('B')}
+        value={targetText}
+        onChange={setTargetText}
+        onTranslate={() => autoTranslate('target')}
         busy={busy}
       />
 
@@ -102,7 +131,12 @@ export default function NewWord() {
       />
 
       <View style={{ marginTop: spacing.xl }}>
-        <Button title="Save word" onPress={save} loading={busy} disabled={!a.trim() || !b.trim()} />
+        <Button
+          title="Save word"
+          onPress={save}
+          loading={saving}
+          disabled={saving || !nativeText.trim() || !targetText.trim()}
+        />
       </View>
     </Screen>
   );
@@ -153,7 +187,11 @@ function TranslatableField({
             justifyContent: 'center',
           }}
         >
-          <Icon icon={Sparkles} size={20} color={accent} />
+          {busy ? (
+            <ActivityIndicator color={accent} />
+          ) : (
+            <Icon icon={Sparkles} size={20} color={accent} />
+          )}
         </Pressable>
       </View>
     </View>

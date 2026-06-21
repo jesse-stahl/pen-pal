@@ -25,14 +25,18 @@ export default function AppLayout() {
     >
       <Tabs.Screen name="home" />
       <Tabs.Screen name="lists/index" />
-      <Tabs.Screen name="study/index" />
+      <Tabs.Screen name="play/index" />
       <Tabs.Screen name="profile" />
       {/* hidden routes */}
+      <Tabs.Screen name="play/[mode]" options={{ href: null }} />
       <Tabs.Screen name="lists/[listId]" options={{ href: null }} />
       <Tabs.Screen name="lists/new" options={{ href: null }} />
       <Tabs.Screen name="lists/[listId]/members" options={{ href: null }} />
       <Tabs.Screen name="words/new" options={{ href: null }} />
       <Tabs.Screen name="words/[wordId]" options={{ href: null }} />
+      <Tabs.Screen name="words/copy" options={{ href: null }} />
+      <Tabs.Screen name="friends/index" options={{ href: null }} />
+      <Tabs.Screen name="friends/add" options={{ href: null }} />
       <Tabs.Screen name="study/flashcards" options={{ href: null }} />
       <Tabs.Screen name="study/multiple-choice" options={{ href: null }} />
       <Tabs.Screen name="study/typing" options={{ href: null }} />

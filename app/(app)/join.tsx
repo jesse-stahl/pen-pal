@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { View, TextInput, Pressable } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { ChevronLeft } from 'lucide-react-native';
 import { acceptInvite } from '../../src/data/invites';
 import { useProfile } from '../../src/store/session';
@@ -12,9 +12,6 @@ import { colors, spacing, radius } from '../../src/ui/theme';
 
 const MESSAGES: Record<string, string> = {
   invalid: 'That code is not valid.',
-  expired: 'That invite has expired.',
-  exhausted: 'That invite has been used too many times.',
-  'already-member': 'You are already in this list.',
 };
 
 export default function Join() {
@@ -22,6 +19,15 @@ export default function Join() {
   const router = useRouter();
   const [code, setCode] = useState('');
   const [error, setError] = useState('');
+
+  useFocusEffect(
+    useCallback(() => {
+      return () => {
+        setCode('');
+        setError('');
+      };
+    }, []),
+  );
 
   async function join() {
     setError('');
@@ -58,9 +64,10 @@ export default function Join() {
         }}
         value={code}
         onChangeText={setCode}
-        placeholder="PNK-7Q2"
+        placeholder="K7M2P9QX"
         placeholderTextColor={colors.textMuted}
         autoCapitalize="characters"
+        maxLength={8}
         autoFocus
       />
 

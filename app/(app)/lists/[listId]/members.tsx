@@ -1,11 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { View, FlatList, Share, Pressable } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { doc, onSnapshot } from 'firebase/firestore';
-import { ChevronLeft, UserPlus } from 'lucide-react-native';
+import { doc, onSnapshot } from '@react-native-firebase/firestore';
+import { ChevronLeft, Share2, RefreshCw } from 'lucide-react-native';
 import { db } from '../../../../src/firebase/config';
 import { ListDoc } from '../../../../src/firebase/schema';
-import { createInvite } from '../../../../src/data/invites';
+import { refreshListCode } from '../../../../src/data/list-codes';
 import { removeMember } from '../../../../src/data/lists';
 import { useProfile } from '../../../../src/store/session';
 import { getLanguageName } from '../../../../src/domain/languages';
@@ -21,12 +21,26 @@ export default function Members() {
   const profile = useProfile();
   const router = useRouter();
   const [list, setList] = useState<ListDoc | null>(null);
-  const [code, setCode] = useState<string | null>(null);
+  const backfilled = useRef(false);
 
   useEffect(() => {
     if (!listId) return;
     return onSnapshot(doc(db, 'lists', listId), (s) => setList({ id: s.id, ...s.data() } as ListDoc));
   }, [listId]);
+
+  // Existing lists created before static codes have no inviteCode; the owner
+  // allocates one on first view. The ref guards against re-running mid-write.
+  useEffect(() => {
+    if (!listId || !list || backfilled.current) return;
+    if (list.ownerUid === profile.uid && !list.inviteCode) {
+      backfilled.current = true;
+      // Reset the guard on failure so a later focus retries instead of leaving
+      // the list permanently without a code.
+      refreshListCode(listId, '', profile.uid).catch(() => {
+        backfilled.current = false;
+      });
+    }
+  }, [listId, list, profile.uid]);
 
   if (!listId || !list) {
     return (
@@ -39,11 +53,13 @@ export default function Members() {
   }
   const isOwner = list.ownerUid === profile.uid;
   const currentList = list;
+  const code = currentList.inviteCode;
 
-  async function invite() {
-    const c = await createInvite(listId, profile.uid);
-    setCode(c);
-    await Share.share({ message: `Join my PenPal list "${currentList.name}" with code ${c}` });
+  async function share() {
+    if (!code) return;
+    await Share.share({
+      message: `Join my PenPal list "${currentList.name}" with code ${code}`,
+    });
   }
 
   return (
@@ -56,21 +72,26 @@ export default function Members() {
           Members
         </AppText>
 
-        <Button title="Invite someone" icon={UserPlus} onPress={invite} />
-        {code ? (
-          <Card style={{ marginTop: spacing.md, alignItems: 'center' }}>
-            <AppText variant="label" color={colors.textMuted}>
-              INVITE CODE
-            </AppText>
-            <AppText
-              variant="h2"
-              color={colors.partner}
-              style={{ marginTop: spacing.xs, letterSpacing: 3 }}
-            >
-              {code}
-            </AppText>
-          </Card>
-        ) : null}
+        <Card style={{ alignItems: 'center', gap: spacing.sm }}>
+          <AppText variant="label" color={colors.textMuted}>
+            INVITE CODE
+          </AppText>
+          <AppText variant="h2" color={colors.partner} style={{ letterSpacing: 3 }}>
+            {code || '——'}
+          </AppText>
+          <View style={{ flexDirection: 'row', gap: spacing.md, marginTop: spacing.xs }}>
+            <Button title="Share" icon={Share2} full={false} onPress={share} />
+            {isOwner ? (
+              <Button
+                title="Refresh"
+                icon={RefreshCw}
+                variant="secondary"
+                full={false}
+                onPress={() => refreshListCode(listId, code, profile.uid)}
+              />
+            ) : null}
+          </View>
+        </Card>
       </View>
 
       <FlatList

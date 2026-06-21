@@ -1,6 +1,6 @@
 import {
-  collection, doc, getDoc, setDoc, query, where, getDocs, Timestamp,
-} from 'firebase/firestore';
+  collection, doc, getDoc, setDoc, updateDoc, query, where, getDocs, Timestamp,
+} from '@react-native-firebase/firestore';
 import { db } from '../firebase/config';
 import { StudyDoc } from '../firebase/schema';
 import { SrsState, initialSrs, schedule } from '../domain/srs';
@@ -35,6 +35,7 @@ export async function ensureStudy(params: {
     dueAt: Timestamp.fromMillis(s.dueAt),
     lastGrade: s.lastGrade,
     lastReviewedAt: Timestamp.fromMillis(0),
+    learned: false,
     prompt: params.prompt,
     answer: params.answer,
     sourceListId: params.sourceListId,
@@ -54,6 +55,7 @@ export async function gradeStudy(uid: string, groupId: string, grade: number): P
     dueAt: d.dueAt.toMillis(),
     lastGrade: d.lastGrade,
     lastReviewedAt: d.lastReviewedAt.toMillis(),
+    learned: d.learned ?? false,
   };
   const next = schedule(prev, grade, nowMs());
   await setDoc(ref, {
@@ -67,11 +69,45 @@ export async function gradeStudy(uid: string, groupId: string, grade: number): P
   });
 }
 
+/** Manually toggle the "fully learned" flag for a word in this user's direction. */
+export async function setLearned(uid: string, groupId: string, learned: boolean): Promise<void> {
+  await updateDoc(studyRef(uid, groupId), { learned });
+}
+
+// `learned` is filtered in JS (not in the Firestore query) so that legacy study
+// docs written before the field existed — where `learned` is absent — are treated
+// as not-learned, and so we avoid needing a composite index.
+function isLearned(d: StudyDoc): boolean {
+  return d.learned === true;
+}
+
+/** Due, not-yet-learned cards (spaced-repetition schedule). */
 export async function getDueStudies(uid: string, now: number, max = 50): Promise<StudyDoc[]> {
   const q = query(
     collection(db, 'users', uid, 'study'),
     where('dueAt', '<=', Timestamp.fromMillis(now))
   );
   const snap = await getDocs(q);
-  return snap.docs.map((d) => d.data() as StudyDoc).slice(0, max);
+  return snap.docs
+    .map((d) => d.data() as StudyDoc)
+    .filter((d) => !isLearned(d))
+    .slice(0, max);
+}
+
+/** Every not-yet-learned card, regardless of due date (always-playable fallback). */
+export async function getNotLearnedStudies(uid: string, max = 50): Promise<StudyDoc[]> {
+  const snap = await getDocs(collection(db, 'users', uid, 'study'));
+  return snap.docs
+    .map((d) => d.data() as StudyDoc)
+    .filter((d) => !isLearned(d))
+    .slice(0, max);
+}
+
+/** Cards the user has marked "fully learned" — the Review session deck. */
+export async function getLearnedStudies(uid: string, max = 50): Promise<StudyDoc[]> {
+  const snap = await getDocs(collection(db, 'users', uid, 'study'));
+  return snap.docs
+    .map((d) => d.data() as StudyDoc)
+    .filter((d) => isLearned(d))
+    .slice(0, max);
 }

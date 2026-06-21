@@ -1,21 +1,28 @@
 import { generateInviteCode, isValidInviteFormat, normalizeInviteCode } from '../invite-code';
 
-test('generated code matches XXX-XXX format with unambiguous charset', () => {
-  for (let i = 0; i < 100; i++) {
-    const code = generateInviteCode(() => Math.random());
-    expect(isValidInviteFormat(code)).toBe(true);
-    expect(code).not.toMatch(/[O0I1L]/); // ambiguous chars excluded
-  }
-});
+describe('invite codes (8-char)', () => {
+  test('generates an 8-char code from the safe alphabet', () => {
+    const code = generateInviteCode(() => 0); // deterministic
+    expect(code).toMatch(/^[A-Z2-9]{8}$/);
+    expect(code).toHaveLength(8);
+  });
 
-test('normalize uppercases and inserts the dash', () => {
-  expect(normalizeInviteCode('pnk7q2')).toBe('PNK-7Q2');
-  expect(normalizeInviteCode('pnk-7q2')).toBe('PNK-7Q2');
-  expect(normalizeInviteCode(' Pnk 7Q2 ')).toBe('PNK-7Q2');
-});
+  test('generated codes never contain ambiguous chars O,0,I,1,L', () => {
+    for (let i = 0; i < 100; i++) {
+      const code = generateInviteCode(() => Math.random());
+      expect(isValidInviteFormat(code)).toBe(true);
+      expect(code).not.toMatch(/[O0I1L]/);
+    }
+  });
 
-test('invalid formats are rejected', () => {
-  expect(isValidInviteFormat('AB-123')).toBe(false);
-  expect(isValidInviteFormat('ABCD-123')).toBe(false);
-  expect(isValidInviteFormat('PNK-7Q2')).toBe(true);
+  test('normalize strips separators and uppercases', () => {
+    expect(normalizeInviteCode('k7m2-p9qx')).toBe('K7M2P9QX');
+    expect(normalizeInviteCode(' K7M2 P9QX ')).toBe('K7M2P9QX');
+  });
+
+  test('validates 8-char format', () => {
+    expect(isValidInviteFormat('K7M2P9QX')).toBe(true);
+    expect(isValidInviteFormat('K7M2P9Q')).toBe(false); // 7 chars
+    expect(isValidInviteFormat('K7M2-P9QX')).toBe(false); // separators not allowed post-normalize
+  });
 });

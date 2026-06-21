@@ -1,4 +1,4 @@
-import { Timestamp } from 'firebase/firestore';
+import { Timestamp } from '@react-native-firebase/firestore';
 
 export interface StreakState {
   current: number;
@@ -8,6 +8,7 @@ export interface StreakState {
 
 export interface UserDoc {
   uid: string;
+  username: string; // unique, lowercase; '' until set on first login
   displayName: string;
   email: string | null;
   photoURL: string | null;
@@ -32,6 +33,7 @@ export interface ListDoc {
   members: Record<string, ListMemberInfo>;
   langA: string;
   langB: string;
+  inviteCode: string; // static 8-char code; owner can refresh (see Phase 6)
   wordCount: number;
   createdAt: Timestamp;
   updatedAt: Timestamp;
@@ -56,25 +58,41 @@ export interface StudyDoc {
   dueAt: Timestamp;
   lastGrade: number;
   lastReviewedAt: Timestamp;
+  learned: boolean;
   prompt: string;
   answer: string;
   sourceListId: string;
 }
 
+// invites/{code} maps a static 8-char code → list. Static codes never expire and
+// have no use cap; the owner can rotate the code (which deletes the old mapping).
 export interface InviteDoc {
   code: string;
   listId: string;
   createdBy: string;
   createdAt: Timestamp;
-  expiresAt: Timestamp;
-  maxUses: number;
-  uses: number;
-  active: boolean;
 }
 
 export interface TradeDoc {
   pairKey: string;
   uids: string[];
   counts: Record<string, number>;
+  updatedAt: Timestamp;
+}
+
+// usernames/{username} → reverse lookup for uniqueness + friend search
+export interface UsernameDoc {
+  uid: string;
+}
+
+// friendRequests/{sortedPairId}
+export interface FriendRequestDoc {
+  id: string;
+  from: string;
+  to: string;
+  status: 'pending' | 'accepted';
+  fromUsername: string;
+  toUsername: string;
+  createdAt: Timestamp;
   updatedAt: Timestamp;
 }

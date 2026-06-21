@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { View, Pressable, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
-import { useDueCards } from '../../../src/hooks/use-due-cards';
+import { useStudyDeck } from '../../../src/hooks/use-study-deck';
 import { gradeStudy } from '../../../src/data/progress';
 import { recordStudyDay } from '../../../src/data/stats';
 import { useProfile } from '../../../src/store/session';
@@ -13,16 +13,16 @@ import { StudyHeader } from '../../../src/ui/components/study-header';
 import { colors, spacing, radius } from '../../../src/ui/theme';
 
 export default function Flashcards() {
-  const { listId } = useLocalSearchParams<{ listId: string }>();
+  const { listId, mode } = useLocalSearchParams<{ listId?: string; mode?: string }>();
   const profile = useProfile();
   const router = useRouter();
-  const { cards, loading } = useDueCards(listId);
+  const { cards, loading } = useStudyDeck(listId, mode === 'review' ? 'review' : 'normal');
   const { start, log } = useStudySession();
   const [i, setI] = useState(0);
   const [flipped, setFlipped] = useState(false);
 
   useEffect(() => {
-    if (!loading && cards.length > 0 && listId) start(cards.length, 'flashcards', listId);
+    if (!loading && cards.length > 0) start(cards.length, 'flashcards', listId ?? 'all');
   }, [loading, cards.length, listId, start]);
 
   useEffect(() => {

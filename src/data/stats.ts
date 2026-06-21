@@ -1,4 +1,4 @@
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc } from '@react-native-firebase/firestore';
 import { db } from '../firebase/config';
 import { UserDoc } from '../firebase/schema';
 import { applyStudyDay } from '../domain/streak';

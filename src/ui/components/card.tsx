@@ -7,11 +7,13 @@ import { useReducedMotion } from './use-reduced-motion';
 export function Card({
   children,
   onPress,
+  onLongPress,
   style,
   padded = true,
 }: {
   children: ReactNode;
   onPress?: () => void;
+  onLongPress?: () => void;
   style?: StyleProp<ViewStyle>;
   padded?: boolean;
 }) {
@@ -38,6 +40,7 @@ export function Card({
       <Pressable
         accessibilityRole="button"
         onPress={onPress}
+        onLongPress={onLongPress}
         onPressIn={() => {
           if (!reduced) scale.value = withSpring(0.98, motion.spring);
         }}

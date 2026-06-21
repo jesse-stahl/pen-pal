@@ -14,7 +14,7 @@ type TabBarProps = Parameters<NonNullable<ComponentProps<typeof Tabs>['tabBar']>
 const TABS: { name: string; label: string; icon: LucideIcon }[] = [
   { name: 'home', label: 'Home', icon: Home },
   { name: 'lists/index', label: 'Lists', icon: Library },
-  { name: 'study/index', label: 'Play', icon: Gamepad2 },
+  { name: 'play/index', label: 'Play', icon: Gamepad2 },
   { name: 'profile', label: 'Profile', icon: User },
 ];
 
