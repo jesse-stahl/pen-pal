@@ -6,9 +6,17 @@ import * as Crypto from 'expo-crypto';
 import { db } from '../firebase/config';
 import { WordDoc } from '../firebase/schema';
 import { bumpWordCount } from './lists';
+import { getDocsCacheFirst } from './firestore-read';
 
 export function listWordsQuery(listId: string) {
   return query(collection(db, 'lists', listId, 'words'), orderBy('createdAt', 'desc'));
+}
+
+// Cache-first one-shot read of a list's words. Used to seed the study deck so
+// studying works from the phone offline without stalling on a network read.
+export async function getListWords(listId: string): Promise<WordDoc[]> {
+  const snap = await getDocsCacheFirst(listWordsQuery(listId));
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() }) as WordDoc);
 }
 
 export async function getWord(listId: string, wordId: string): Promise<WordDoc | null> {

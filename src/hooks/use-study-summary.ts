@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { collection, getDocs } from '@react-native-firebase/firestore';
+import { collection } from '@react-native-firebase/firestore';
 import { db } from '../firebase/config';
+import { getDocsCacheFirst } from '../data/firestore-read';
 import { StudyDoc } from '../firebase/schema';
 import { nowMs } from '../domain/clock';
 
@@ -20,7 +21,7 @@ export function useStudySummary(uid: string): StudySummary {
   useEffect(() => {
     let active = true;
     (async () => {
-      const snap = await getDocs(collection(db, 'users', uid, 'study'));
+      const snap = await getDocsCacheFirst(collection(db, 'users', uid, 'study'));
       const docs = snap.docs.map((d) => d.data() as StudyDoc);
       const known = docs.filter((d) => d.repetitions > 0).length;
       const due = docs.filter((d) => d.dueAt.toMillis() <= nowMs()).length;

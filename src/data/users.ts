@@ -2,9 +2,12 @@ import { doc, getDoc, getDocs, setDoc, updateDoc, serverTimestamp } from '@react
 import { db } from '../firebase/config';
 import { UserDoc } from '../firebase/schema';
 import { userListsQuery } from './lists';
+import { getDocCacheFirst } from './firestore-read';
 
+// Cache-first so a cold start offline loads the profile from the phone instantly
+// and the auth gate routes into the app instead of stalling on its spinner.
 export async function getUser(uid: string): Promise<UserDoc | null> {
-  const snap = await getDoc(doc(db, 'users', uid));
+  const snap = await getDocCacheFirst(doc(db, 'users', uid));
   return snap.exists() ? (snap.data() as UserDoc) : null;
 }
 

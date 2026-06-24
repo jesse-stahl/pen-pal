@@ -1,14 +1,13 @@
 import { useCallback, useState } from 'react';
 import { useFocusEffect } from 'expo-router';
-import { getDocs } from '@react-native-firebase/firestore';
-import { listWordsQuery } from '../data/words';
+import { getListWords } from '../data/words';
 import {
   ensureStudy, getDueStudies, getNotLearnedStudies, getLearnedStudies,
 } from '../data/progress';
 import { buildPromptAnswer } from '../domain/direction';
 import { nowMs } from '../domain/clock';
 import { Card, shuffle } from '../domain/quiz';
-import { WordDoc, UserDoc, StudyDoc } from '../firebase/schema';
+import { UserDoc, StudyDoc } from '../firebase/schema';
 import { useProfile } from '../store/session';
 import { useUserLists } from './use-user-lists';
 
@@ -22,10 +21,9 @@ const DECK_MAX = 50;
  * records are stored globally per groupId, not per list).
  */
 async function seedFromList(listId: string, profile: UserDoc): Promise<string[]> {
-  const snap = await getDocs(listWordsQuery(listId));
+  const words = await getListWords(listId);
   const groupIds: string[] = [];
-  for (const d of snap.docs) {
-    const w = d.data() as WordDoc;
+  for (const w of words) {
     groupIds.push(w.groupId);
     const pa = buildPromptAnswer(w.terms, profile.nativeLang, profile.targetLang);
     if (!pa) continue; // word lacks the user's language pair
