@@ -47,8 +47,7 @@ async function seedFromList(listId: string, profile: UserDoc): Promise<string[]>
  *                     session is never empty / is replayable any time.
  * - mode 'review'  => only cards the user has marked "fully learned".
  *
- * Refetches on every focus: the game screens live in the Tabs navigator and stay
- * mounted across navigations, so a plain effect would leave a stale deck.
+ * Refetches on every focus so a deck never goes stale if the screen is revisited.
  */
 export function useStudyDeck(listId: string | undefined, mode: StudyMode) {
   const profile = useProfile();

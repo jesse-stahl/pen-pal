@@ -23,7 +23,7 @@ export default function WordView() {
   const profile = useProfile();
   const router = useRouter();
   const [list, setList] = useState<ListDoc | null>(null);
-  const { words } = useListWords(listId);
+  const { words, loading: wordsLoading } = useListWords(listId);
   const [currentId, setCurrentId] = useState(wordId);
   const [direction, setDirection] = useState<SwipeDirection | null>(null);
 
@@ -48,7 +48,7 @@ export default function WordView() {
     return (
       <Screen>
         <AppText variant="body" color={colors.textMuted}>
-          Loading…
+          {!wordsLoading && words.length === 0 ? 'This list has no words.' : 'Loading…'}
         </AppText>
       </Screen>
     );

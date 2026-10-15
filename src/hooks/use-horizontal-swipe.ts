@@ -24,6 +24,9 @@ export function useHorizontalSwipe(onSwipe: (dir: SwipeDirection) => void): PanR
       PanResponder.create({
         onMoveShouldSetPanResponder: (_e, g) =>
           Math.abs(g.dx) > ACTIVATE_DX && Math.abs(g.dx) > Math.abs(g.dy) * 1.5,
+        // Keep the gesture once claimed; otherwise the parent ScrollView (iOS
+        // bounce) takes it over mid-swipe and the release never fires.
+        onPanResponderTerminationRequest: () => false,
         onPanResponderRelease: (_e, g) => {
           if (g.dx <= -SWIPE_DX) handler.current('next');
           else if (g.dx >= SWIPE_DX) handler.current('prev');

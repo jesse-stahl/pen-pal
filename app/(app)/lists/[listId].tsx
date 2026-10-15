@@ -8,7 +8,7 @@ import { ListDoc } from '../../../src/firebase/schema';
 import { useListWords } from '../../../src/hooks/use-list-words';
 import { useWordSelection } from '../../../src/store/word-selection';
 import { deleteWords } from '../../../src/data/words';
-import { buildDisplayPair } from '../../../src/domain/direction';
+import { buildDisplayPair, orientLanguages } from '../../../src/domain/direction';
 import { useProfile } from '../../../src/store/session';
 import { Screen } from '../../../src/ui/components/screen';
 import { AppText } from '../../../src/ui/components/app-text';
@@ -52,10 +52,11 @@ export default function ListDetail() {
   }
   const currentList = list;
   // Orient word rows to the viewer's native language (native term shown first).
-  const nativeLangCode = [currentList.langA, currentList.langB].includes(profile.nativeLang)
-    ? profile.nativeLang
-    : currentList.langA;
-  const targetLangCode = nativeLangCode === currentList.langA ? currentList.langB : currentList.langA;
+  const { nativeLang: nativeLangCode, targetLang: targetLangCode } = orientLanguages(
+    currentList.langA,
+    currentList.langB,
+    profile.nativeLang,
+  );
 
   function confirmBulkDelete() {
     const ids = [...selectedIds];

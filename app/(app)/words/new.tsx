@@ -11,6 +11,7 @@ import { AppText } from '../../../src/ui/components/app-text';
 import { Button } from '../../../src/ui/components/button';
 import { Icon } from '../../../src/ui/components/icon';
 import { SpeakButton } from '../../../src/ui/components/speak-button';
+import { orientLanguages } from '../../../src/domain/direction';
 import { colors, spacing, radius } from '../../../src/ui/theme';
 
 export default function NewWord() {
@@ -55,8 +56,7 @@ export default function NewWord() {
 
   // Orient the form to the viewer's native language: of the list's two languages,
   // the viewer's native one is the top field (fall back to langA), the other target.
-  const nativeLangCode = [langA, langB].includes(profile.nativeLang) ? profile.nativeLang : langA;
-  const targetLangCode = nativeLangCode === langA ? langB : langA;
+  const { nativeLang: nativeLangCode, targetLang: targetLangCode } = orientLanguages(langA, langB, profile.nativeLang);
 
   async function autoTranslate(from: 'native' | 'target') {
     setBusy(true);

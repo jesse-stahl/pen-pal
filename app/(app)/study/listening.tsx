@@ -4,8 +4,7 @@ import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { useStudyDeck } from '../../../src/hooks/use-study-deck';
 import { gradeStudy } from '../../../src/data/progress';
 import { recordStudyDay } from '../../../src/data/stats';
-import { checkVoice } from '../../../src/services/speech';
-import { VoiceStatus } from '../../../src/domain/voice-match';
+import { useVoiceStatus } from '../../../src/hooks/use-voice-status';
 import { getLanguageName } from '../../../src/domain/languages';
 import { useProfile } from '../../../src/store/session';
 import { useStudySession } from '../../../src/store/study-session';
@@ -16,20 +15,6 @@ import { StudyHeader } from '../../../src/ui/components/study-header';
 import { ListeningCard } from '../../../src/ui/components/listening-card';
 import { GradeBar } from '../../../src/ui/components/grade-bar';
 import { colors, spacing } from '../../../src/ui/theme';
-
-function useVoiceStatus(lang: string): VoiceStatus | null {
-  const [status, setStatus] = useState<VoiceStatus | null>(null);
-  useEffect(() => {
-    let active = true;
-    checkVoice(lang).then((s) => {
-      if (active) setStatus(s);
-    });
-    return () => {
-      active = false;
-    };
-  }, [lang]);
-  return status;
-}
 
 export default function Listening() {
   const { listId, mode } = useLocalSearchParams<{ listId?: string; mode?: string }>();

@@ -4,9 +4,13 @@ export interface VoiceInfo {
 
 export type VoiceStatus = 'available' | 'missing' | 'unknown';
 
-// "th_TH" / "TH-th" → "th"
+// Android's java.util.Locale can still report the deprecated ISO 639 codes.
+const LEGACY_CODES: Record<string, string> = { in: 'id', iw: 'he', ji: 'yi' };
+
+// "th_TH" / "TH-th" → "th"; "in_ID" → "id"
 function primarySubtag(tag: string): string {
-  return tag.trim().replace(/_/g, '-').toLowerCase().split('-')[0] ?? '';
+  const base = tag.trim().replace(/_/g, '-').toLowerCase().split('-')[0] ?? '';
+  return LEGACY_CODES[base] ?? base;
 }
 
 /** Whether any installed voice speaks `lang` (a base code like "th" or a tag like "zh-CN"). */

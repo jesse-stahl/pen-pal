@@ -13,6 +13,10 @@ describe('hasVoiceFor', () => {
     expect(hasVoiceFor(voices, 'TH-th')).toBe(true);
   });
 
+  test("maps Android's legacy codes (in → id)", () => {
+    expect(hasVoiceFor([{ language: 'in-ID' }], 'id')).toBe(true);
+  });
+
   test('false when no voice speaks the language', () => {
     expect(hasVoiceFor(voices, 'ja')).toBe(false);
     expect(hasVoiceFor(voices, '')).toBe(false);
