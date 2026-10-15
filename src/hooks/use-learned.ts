@@ -16,11 +16,15 @@ export function useLearned(uid: string, groupId: string | undefined) {
   useEffect(() => {
     if (!groupId) return;
     let active = true;
-    getStudy(uid, groupId).then((st) => {
-      if (!active) return;
-      // Don't clobber an optimistic toggle the user made before the fetch resolved.
-      setState((prev) => (prev?.groupId === groupId ? prev : { groupId, learned: st?.learned === true }));
-    });
+    getStudy(uid, groupId)
+      .then((st) => {
+        if (!active) return;
+        // Don't clobber an optimistic toggle the user made before the fetch resolved.
+        setState((prev) => (prev?.groupId === groupId ? prev : { groupId, learned: st?.learned === true }));
+      })
+      .catch(() => {
+        // Offline with no cached study doc: leave the toggle at its default (not learned).
+      });
     return () => {
       active = false;
     };
