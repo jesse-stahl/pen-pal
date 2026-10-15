@@ -14,6 +14,7 @@ const GAME_LABELS: Record<string, string> = {
   'multiple-choice': 'Multiple choice',
   typing: 'Typing',
   matching: 'Matching',
+  listening: 'Listening',
 };
 
 export default function PlayScope() {

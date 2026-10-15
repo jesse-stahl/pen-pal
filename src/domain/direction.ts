@@ -39,3 +39,17 @@ export function buildDisplayPair(
   if (!nativeTerm || !targetTerm) return null;
   return { nativeTerm, targetTerm, audioTerm: targetTerm, audioLang: targetLang };
 }
+
+export interface ListLanguages {
+  nativeLang: string; // the viewer's own language within this list
+  targetLang: string; // the other language of the list
+}
+
+/**
+ * Orient a list's two languages to a viewer: their native one first (falling
+ * back to langA when they speak neither), the other is their target.
+ */
+export function orientLanguages(langA: string, langB: string, viewerNative: string): ListLanguages {
+  const nativeLang = [langA, langB].includes(viewerNative) ? viewerNative : langA;
+  return { nativeLang, targetLang: nativeLang === langA ? langB : langA };
+}

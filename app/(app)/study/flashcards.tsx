@@ -10,6 +10,8 @@ import { Screen } from '../../../src/ui/components/screen';
 import { AppText } from '../../../src/ui/components/app-text';
 import { Card } from '../../../src/ui/components/card';
 import { StudyHeader } from '../../../src/ui/components/study-header';
+import { GradeBar } from '../../../src/ui/components/grade-bar';
+import { SpeakButton } from '../../../src/ui/components/speak-button';
 import { colors, spacing, radius } from '../../../src/ui/theme';
 
 export default function Flashcards() {
@@ -29,8 +31,7 @@ export default function Flashcards() {
     if (!loading && cards.length === 0) router.replace('/(app)/study/results');
   }, [loading, cards.length, router]);
 
-  // Each time the screen is focused, start a fresh session. The Tabs navigator keeps this
-  // screen mounted, so without this the position would persist from the previous visit.
+  // Reset position whenever the screen gains focus so a fresh visit always starts at card 1.
   useFocusEffect(
     useCallback(() => {
       setI(0);
@@ -81,42 +82,19 @@ export default function Flashcards() {
           >
             {flipped ? card.answer : card.prompt}
           </AppText>
+          {flipped ? (
+            <View style={{ marginTop: spacing.lg }}>
+              <SpeakButton text={card.answer} lang={profile.targetLang} size={28} />
+            </View>
+          ) : null}
           <AppText variant="caption" color={colors.textMuted} style={{ marginTop: spacing.lg }}>
             {flipped ? 'How well did you know it?' : 'Tap to reveal'}
           </AppText>
         </Card>
       </Pressable>
 
-      {flipped ? (
-        <View style={{ flexDirection: 'row', gap: spacing.sm, marginTop: spacing.lg }}>
-          <Grade label="Again" color={colors.danger} onPress={() => grade(1)} />
-          <Grade label="Hard" color={colors.warning} onPress={() => grade(3)} />
-          <Grade label="Good" color={colors.success} onPress={() => grade(4)} />
-          <Grade label="Easy" color={colors.partner} onPress={() => grade(5)} />
-        </View>
-      ) : (
-        <View style={{ height: 64 }} />
-      )}
+      {flipped ? <GradeBar onGrade={grade} /> : <View style={{ height: 64 }} />}
     </Screen>
-  );
-}
-
-function Grade({ label, color, onPress }: { label: string; color: string; onPress: () => void }) {
-  return (
-    <Pressable
-      onPress={onPress}
-      style={{
-        flex: 1,
-        backgroundColor: color,
-        paddingVertical: spacing.lg,
-        borderRadius: radius.md,
-        alignItems: 'center',
-      }}
-    >
-      <AppText variant="caption" color="#0B0D10">
-        {label}
-      </AppText>
-    </Pressable>
   );
 }
 

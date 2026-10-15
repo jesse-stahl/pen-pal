@@ -11,6 +11,7 @@ import { Screen } from '../../../src/ui/components/screen';
 import { AppText } from '../../../src/ui/components/app-text';
 import { Button } from '../../../src/ui/components/button';
 import { StudyHeader } from '../../../src/ui/components/study-header';
+import { SpeakButton } from '../../../src/ui/components/speak-button';
 import { colors, spacing, radius } from '../../../src/ui/theme';
 
 export default function Typing() {
@@ -29,7 +30,7 @@ export default function Typing() {
   useEffect(() => {
     if (!loading && cards.length === 0) router.replace('/(app)/study/results');
   }, [loading, cards.length, router]);
-  // Each focus starts a fresh session; this Tabs screen stays mounted between visits.
+  // Each focus starts a fresh session.
   useFocusEffect(
     useCallback(() => {
       setI(0);
@@ -105,13 +106,20 @@ export default function Typing() {
         />
 
         {result !== null ? (
-          <AppText
-            variant="bodyStrong"
-            color={result === 'correct' ? colors.success : colors.danger}
-            style={{ textAlign: 'center', marginTop: spacing.lg }}
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: spacing.sm,
+              marginTop: spacing.lg,
+            }}
           >
-            {result === 'correct' ? 'Correct!' : `Answer: ${card.answer}`}
-          </AppText>
+            <AppText variant="bodyStrong" color={result === 'correct' ? colors.success : colors.danger}>
+              {result === 'correct' ? 'Correct!' : `Answer: ${card.answer}`}
+            </AppText>
+            <SpeakButton text={card.answer} lang={profile.targetLang} />
+          </View>
         ) : null}
 
         <View style={{ marginTop: spacing.xl }}>

@@ -13,19 +13,13 @@ type TabBarProps = Parameters<NonNullable<ComponentProps<typeof Tabs>['tabBar']>
 
 const TABS: { name: string; label: string; icon: LucideIcon }[] = [
   { name: 'home', label: 'Home', icon: Home },
-  { name: 'lists/index', label: 'Lists', icon: Library },
-  { name: 'play/index', label: 'Play', icon: Gamepad2 },
+  { name: 'lists', label: 'Lists', icon: Library },
+  { name: 'play', label: 'Play', icon: Gamepad2 },
   { name: 'profile', label: 'Profile', icon: User },
 ];
 
 export function FloatingTabBar({ state, navigation }: TabBarProps) {
   const insets = useSafeAreaInsets();
-
-  // The Tabs navigator renders this bar for every route in the group, including
-  // full-screen detail/study routes (href: null). Only show it on the 4 real tabs
-  // so it never overlaps a game, the Results screen, or a screen's own CTA.
-  const currentRoute = state.routes[state.index]?.name;
-  if (!TABS.some((t) => t.name === currentRoute)) return null;
 
   return (
     <View

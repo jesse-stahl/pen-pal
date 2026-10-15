@@ -10,6 +10,7 @@ import { useStudySession } from '../../../src/store/study-session';
 import { Screen } from '../../../src/ui/components/screen';
 import { AppText } from '../../../src/ui/components/app-text';
 import { StudyHeader } from '../../../src/ui/components/study-header';
+import { SpeakButton } from '../../../src/ui/components/speak-button';
 import { colors, spacing, radius } from '../../../src/ui/theme';
 
 export default function MultipleChoice() {
@@ -27,7 +28,7 @@ export default function MultipleChoice() {
   useEffect(() => {
     if (!loading && cards.length === 0) router.replace('/(app)/study/results');
   }, [loading, cards.length, router]);
-  // Each focus starts a fresh session; this Tabs screen stays mounted between visits.
+  // Each focus starts a fresh session.
   useFocusEffect(
     useCallback(() => {
       setI(0);
@@ -94,6 +95,8 @@ export default function MultipleChoice() {
                 key={opt}
                 onPress={() => pick(opt)}
                 style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
                   padding: spacing.lg,
                   borderRadius: radius.lg,
                   backgroundColor: bg,
@@ -101,9 +104,11 @@ export default function MultipleChoice() {
                   borderColor: border,
                 }}
               >
-                <AppText variant="bodyStrong" style={{ textAlign: 'center' }}>
+                <View style={{ width: 20 }} />
+                <AppText variant="bodyStrong" style={{ flex: 1, textAlign: 'center' }}>
                   {opt}
                 </AppText>
+                <SpeakButton text={opt} lang={profile.targetLang} size={20} />
               </Pressable>
             );
           })}

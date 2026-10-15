@@ -50,7 +50,7 @@ Other plugin tools exist for **writes** (`firestore_add_document`, `firestore_up
 
 **Three cooperating pieces:**
 
-1. **Expo app** (`app/` routes via Expo Router, `src/` logic). File-based navigation with two route groups: `(auth)` (sign-in, onboarding) and `(app)` (tabs: lists, study, stats, settings). An auth gate in `app/_layout.tsx` redirects based on auth + onboarding state.
+1. **Expo app** (`app/` routes via Expo Router, `src/` logic). Two route groups: `(auth)` (sign-in, onboarding) and `(app)`. `(app)/_layout.tsx` is a **Stack**; its nested `(tabs)` group holds the 4 tabs (home, lists, play, profile). Every other `(app)` route (list/word detail, study screens, forms) is a stack screen pushed above the tabs, so back always returns to the previous screen and the tab bar only shows on the 4 tabs. Do not add detail routes into `(tabs)`. An auth gate in `app/_layout.tsx` redirects based on auth + onboarding state.
 
 2. **Firebase** — Firestore (data + offline persistence), Auth (Google + Apple), and the client talks to it through thin data-layer modules.
 
@@ -61,6 +61,7 @@ Other plugin tools exist for **writes** (`firestore_add_document`, `firestore_up
 - `src/data/` — Firestore read/write modules (no React).
 - `src/hooks/` — React hooks wrapping realtime Firestore listeners.
 - `src/services/` — external integrations (translate callable, notifications).
+- **Pronunciation** uses on-device TTS only through `src/services/speech.ts` (`speak`, `checkVoice`) and the `SpeakButton` component — never import `expo-speech` in screens. It always speaks the viewer's **target** term, only on tap (Listening mode's front included).
 - `app/` — screens only; delegate logic to the layers above.
 
 **Data model is deliberately denormalized.** Key decisions that aren't obvious from the code:

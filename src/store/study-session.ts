@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { AnswerLog, StudySession, emptySession, logAnswer } from '../domain/session-result';
 
-export type StudyMode = 'flashcards' | 'multiple-choice' | 'typing' | 'matching';
+export type StudyMode = 'flashcards' | 'multiple-choice' | 'typing' | 'matching' | 'listening';
 
 interface StudySessionState {
   session: StudySession | null;

@@ -1,6 +1,6 @@
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Layers, ListChecks, Keyboard, Shuffle, LucideIcon } from 'lucide-react-native';
+import { Layers, ListChecks, Keyboard, Shuffle, Headphones, LucideIcon } from 'lucide-react-native';
 import { Screen } from '../../../src/ui/components/screen';
 import { AppText } from '../../../src/ui/components/app-text';
 import { Card } from '../../../src/ui/components/card';
@@ -12,6 +12,7 @@ const MODES: { key: string; label: string; icon: LucideIcon; accent: string }[] 
   { key: 'multiple-choice', label: 'Multiple choice', icon: ListChecks, accent: colors.partner },
   { key: 'typing', label: 'Typing', icon: Keyboard, accent: colors.success },
   { key: 'matching', label: 'Matching', icon: Shuffle, accent: colors.warning },
+  { key: 'listening', label: 'Listening', icon: Headphones, accent: colors.partner },
 ];
 
 export default function PlayHub() {

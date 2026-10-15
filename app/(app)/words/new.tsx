@@ -10,6 +10,7 @@ import { Screen } from '../../../src/ui/components/screen';
 import { AppText } from '../../../src/ui/components/app-text';
 import { Button } from '../../../src/ui/components/button';
 import { Icon } from '../../../src/ui/components/icon';
+import { SpeakButton } from '../../../src/ui/components/speak-button';
 import { colors, spacing, radius } from '../../../src/ui/theme';
 
 export default function NewWord() {
@@ -117,6 +118,7 @@ export default function NewWord() {
         onChange={setTargetText}
         onTranslate={() => autoTranslate('target')}
         busy={busy}
+        speakLang={targetLangCode}
       />
 
       <AppText variant="label" color={colors.textMuted} style={{ marginTop: spacing.lg, marginBottom: spacing.sm }}>
@@ -150,6 +152,7 @@ function TranslatableField({
   onTranslate,
   busy,
   autoFocus = false,
+  speakLang,
 }: {
   label: string;
   accent: string;
@@ -158,6 +161,7 @@ function TranslatableField({
   onTranslate: () => void;
   busy: boolean;
   autoFocus?: boolean;
+  speakLang?: string; // when set, show a pronunciation preview for this field
 }) {
   return (
     <View style={{ marginTop: spacing.lg }}>
@@ -172,6 +176,7 @@ function TranslatableField({
           placeholderTextColor={colors.textMuted}
           autoFocus={autoFocus}
         />
+        {speakLang ? <SpeakButton text={value} lang={speakLang} /> : null}
         <Pressable
           accessibilityLabel="Auto-translate"
           disabled={busy}

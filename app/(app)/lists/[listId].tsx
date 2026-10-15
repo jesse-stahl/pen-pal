@@ -18,6 +18,7 @@ import { WordPair } from '../../../src/ui/components/word-pair';
 import { EmptyState } from '../../../src/ui/components/empty-state';
 import { Icon } from '../../../src/ui/components/icon';
 import { Skeleton } from '../../../src/ui/components/skeleton';
+import { SpeakButton } from '../../../src/ui/components/speak-button';
 import { colors, spacing } from '../../../src/ui/theme';
 
 export default function ListDetail() {
@@ -142,6 +143,9 @@ export default function ListDetail() {
                     </View>
                   ) : null}
                 </View>
+                {!selecting && display ? (
+                  <SpeakButton text={display.audioTerm} lang={display.audioLang} size={20} />
+                ) : null}
                 {selecting ? (
                   <View
                     style={{

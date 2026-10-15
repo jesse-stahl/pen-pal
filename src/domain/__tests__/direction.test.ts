@@ -1,4 +1,4 @@
-import { buildPromptAnswer, buildDisplayPair } from '../direction';
+import { buildPromptAnswer, buildDisplayPair, orientLanguages } from '../direction';
 
 const terms = { th: 'หมา', en: 'dog' };
 
@@ -39,4 +39,15 @@ test('Thai learner is shown Thai, recalls English', () => {
 
 test('returns null if either side is missing', () => {
   expect(buildPromptAnswer({ en: 'dog' }, 'en', 'th')).toBeNull();
+});
+
+describe('orientLanguages', () => {
+  test("viewer's native language becomes nativeLang", () => {
+    expect(orientLanguages('en', 'th', 'th')).toEqual({ nativeLang: 'th', targetLang: 'en' });
+    expect(orientLanguages('en', 'th', 'en')).toEqual({ nativeLang: 'en', targetLang: 'th' });
+  });
+
+  test('falls back to langA as native when the viewer speaks neither', () => {
+    expect(orientLanguages('en', 'th', 'es')).toEqual({ nativeLang: 'en', targetLang: 'th' });
+  });
 });
