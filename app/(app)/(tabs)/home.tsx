@@ -2,21 +2,21 @@ import { View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Plus, UserPlus, Play, ChevronRight, BookOpen } from 'lucide-react-native';
 import { DateTime } from 'luxon';
-import { useProfile } from '../../src/store/session';
-import { useUserLists } from '../../src/hooks/use-user-lists';
-import { useStudySummary } from '../../src/hooks/use-study-summary';
-import { learnerLevel } from '../../src/domain/progress-stats';
-import { Screen } from '../../src/ui/components/screen';
-import { AppText } from '../../src/ui/components/app-text';
-import { Card } from '../../src/ui/components/card';
-import { Button } from '../../src/ui/components/button';
-import { StreakBadge } from '../../src/ui/components/streak-badge';
-import { ProgressBar } from '../../src/ui/components/progress-bar';
-import { ListCard } from '../../src/ui/components/list-card';
-import { SectionHeader } from '../../src/ui/components/section-header';
-import { Icon } from '../../src/ui/components/icon';
-import { EmptyState } from '../../src/ui/components/empty-state';
-import { colors, spacing } from '../../src/ui/theme';
+import { useProfile } from '../../../src/store/session';
+import { useUserLists } from '../../../src/hooks/use-user-lists';
+import { useStudySummary } from '../../../src/hooks/use-study-summary';
+import { learnerLevel } from '../../../src/domain/progress-stats';
+import { Screen } from '../../../src/ui/components/screen';
+import { AppText } from '../../../src/ui/components/app-text';
+import { Card } from '../../../src/ui/components/card';
+import { Button } from '../../../src/ui/components/button';
+import { StreakBadge } from '../../../src/ui/components/streak-badge';
+import { ProgressBar } from '../../../src/ui/components/progress-bar';
+import { ListCard } from '../../../src/ui/components/list-card';
+import { SectionHeader } from '../../../src/ui/components/section-header';
+import { Icon } from '../../../src/ui/components/icon';
+import { EmptyState } from '../../../src/ui/components/empty-state';
+import { colors, spacing } from '../../../src/ui/theme';
 
 function greeting(): string {
   const h = DateTime.now().hour;
@@ -115,7 +115,7 @@ export default function Home() {
             <AppText
               variant="caption"
               color={colors.you}
-              onPress={() => router.push('/(app)/lists')}
+              onPress={() => router.navigate('/(app)/lists')}
             >
               See all
             </AppText>

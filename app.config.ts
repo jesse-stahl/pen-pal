@@ -9,6 +9,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   version: '0.1.0',
   orientation: 'portrait',
   userInterfaceStyle: 'dark',
+  icon: './assets/icon.png',
   ios: {
     supportsTablet: false,
     bundleIdentifier: 'app.penpal.mobile',
@@ -20,6 +21,12 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   android: {
     package: 'app.penpal.mobile',
+    adaptiveIcon: {
+      foregroundImage: './assets/android-icon-foreground.png',
+      backgroundImage: './assets/android-icon-background.png',
+      monochromeImage: './assets/android-icon-monochrome.png',
+      backgroundColor: '#0F0F0F',
+    },
     googleServicesFile: process.env.GOOGLE_SERVICES_JSON ?? './google-services.json',
   },
   plugins: [

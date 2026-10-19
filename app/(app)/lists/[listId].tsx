@@ -8,7 +8,7 @@ import { ListDoc } from '../../../src/firebase/schema';
 import { useListWords } from '../../../src/hooks/use-list-words';
 import { useWordSelection } from '../../../src/store/word-selection';
 import { deleteWords } from '../../../src/data/words';
-import { buildDisplayPair } from '../../../src/domain/direction';
+import { buildDisplayPair, orientLanguages } from '../../../src/domain/direction';
 import { useProfile } from '../../../src/store/session';
 import { Screen } from '../../../src/ui/components/screen';
 import { AppText } from '../../../src/ui/components/app-text';
@@ -18,6 +18,7 @@ import { WordPair } from '../../../src/ui/components/word-pair';
 import { EmptyState } from '../../../src/ui/components/empty-state';
 import { Icon } from '../../../src/ui/components/icon';
 import { Skeleton } from '../../../src/ui/components/skeleton';
+import { SpeakButton } from '../../../src/ui/components/speak-button';
 import { colors, spacing } from '../../../src/ui/theme';
 
 export default function ListDetail() {
@@ -51,10 +52,11 @@ export default function ListDetail() {
   }
   const currentList = list;
   // Orient word rows to the viewer's native language (native term shown first).
-  const nativeLangCode = [currentList.langA, currentList.langB].includes(profile.nativeLang)
-    ? profile.nativeLang
-    : currentList.langA;
-  const targetLangCode = nativeLangCode === currentList.langA ? currentList.langB : currentList.langA;
+  const { nativeLang: nativeLangCode, targetLang: targetLangCode } = orientLanguages(
+    currentList.langA,
+    currentList.langB,
+    profile.nativeLang,
+  );
 
   function confirmBulkDelete() {
     const ids = [...selectedIds];
@@ -142,6 +144,9 @@ export default function ListDetail() {
                     </View>
                   ) : null}
                 </View>
+                {!selecting && display ? (
+                  <SpeakButton text={display.audioTerm} lang={display.audioLang} size={20} />
+                ) : null}
                 {selecting ? (
                   <View
                     style={{

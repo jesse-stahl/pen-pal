@@ -2,6 +2,8 @@ import { View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { PartyPopper, Sparkles, Target, RotateCcw, Home } from 'lucide-react-native';
 import { useStudySession } from '../../../src/store/study-session';
+import { useProfile } from '../../../src/store/session';
+import { SpeakButton } from '../../../src/ui/components/speak-button';
 import { summarize } from '../../../src/domain/session-result';
 import { Screen } from '../../../src/ui/components/screen';
 import { AppText } from '../../../src/ui/components/app-text';
@@ -14,6 +16,7 @@ import { colors, spacing } from '../../../src/ui/theme';
 
 export default function Results() {
   const router = useRouter();
+  const profile = useProfile();
   const { session, mode, listId, clear } = useStudySession();
 
   const summary = session ? summarize(session) : null;
@@ -33,7 +36,10 @@ export default function Results() {
   }
   function done() {
     clear();
-    router.replace('/(app)/play');
+    // Study screens replace themselves with Results, so back lands on whatever
+    // launched the session (scope picker, Home's "continue", …).
+    if (router.canGoBack()) router.back();
+    else router.replace('/(app)/home');
   }
 
   return (
@@ -83,9 +89,12 @@ export default function Results() {
                   <AppText variant="body" color={colors.you}>
                     {m.prompt || '—'}
                   </AppText>
-                  <AppText variant="bodyStrong" color={colors.partner}>
-                    {m.answer}
-                  </AppText>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+                    <AppText variant="bodyStrong" color={colors.partner}>
+                      {m.answer}
+                    </AppText>
+                    <SpeakButton text={m.answer} lang={profile.targetLang} size={18} />
+                  </View>
                 </View>
               ))}
             </Card>
