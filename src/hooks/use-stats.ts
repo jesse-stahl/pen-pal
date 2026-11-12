@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { collection, getDocs, doc, getDoc, query, where } from '@react-native-firebase/firestore';
+import { collection, doc, query, where } from '@react-native-firebase/firestore';
 import { db } from '../firebase/config';
+import { getDocCacheFirst, getDocsCacheFirst } from '../data/firestore-read';
 import { TradeDoc, UserDoc } from '../firebase/schema';
 
 export interface PartnerTrade {
@@ -18,7 +19,7 @@ export function useStats(profile: UserDoc | null) {
       if (!profile) return;
       // Only the user's own trades are readable under the security rules, so scope the
       // query to documents that list this uid in `uids` (array-contains).
-      const all = await getDocs(
+      const all = await getDocsCacheFirst(
         query(collection(db, 'trades'), where('uids', 'array-contains', profile.uid))
       );
       const mine: PartnerTrade[] = [];
@@ -26,7 +27,7 @@ export function useStats(profile: UserDoc | null) {
         const t = d.data() as TradeDoc;
         const [a, b] = t.pairKey.split('_');
         const partnerUid = a === profile.uid ? b : a;
-        const partnerSnap = await getDoc(doc(db, 'users', partnerUid));
+        const partnerSnap = await getDocCacheFirst(doc(db, 'users', partnerUid));
         mine.push({
           partnerUid,
           partnerName: (partnerSnap.data() as UserDoc | undefined)?.displayName ?? 'Partner',

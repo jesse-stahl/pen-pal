@@ -1,7 +1,8 @@
 import {
-  collection, doc, getDoc, setDoc, updateDoc, query, where, getDocs, Timestamp,
+  collection, doc, getDoc, setDoc, updateDoc, query, where, Timestamp,
 } from '@react-native-firebase/firestore';
 import { db } from '../firebase/config';
+import { getDocsCacheFirst } from './firestore-read';
 import { StudyDoc } from '../firebase/schema';
 import { SrsState, initialSrs, schedule } from '../domain/srs';
 import { nowMs } from '../domain/clock';
@@ -87,7 +88,7 @@ export async function getDueStudies(uid: string, now: number, max = 50): Promise
     collection(db, 'users', uid, 'study'),
     where('dueAt', '<=', Timestamp.fromMillis(now))
   );
-  const snap = await getDocs(q);
+  const snap = await getDocsCacheFirst(q);
   return snap.docs
     .map((d) => d.data() as StudyDoc)
     .filter((d) => !isLearned(d))
@@ -96,7 +97,7 @@ export async function getDueStudies(uid: string, now: number, max = 50): Promise
 
 /** Every not-yet-learned card, regardless of due date (always-playable fallback). */
 export async function getNotLearnedStudies(uid: string, max = 50): Promise<StudyDoc[]> {
-  const snap = await getDocs(collection(db, 'users', uid, 'study'));
+  const snap = await getDocsCacheFirst(collection(db, 'users', uid, 'study'));
   return snap.docs
     .map((d) => d.data() as StudyDoc)
     .filter((d) => !isLearned(d))
@@ -105,7 +106,7 @@ export async function getNotLearnedStudies(uid: string, max = 50): Promise<Study
 
 /** Cards the user has marked "fully learned" — the Review session deck. */
 export async function getLearnedStudies(uid: string, max = 50): Promise<StudyDoc[]> {
-  const snap = await getDocs(collection(db, 'users', uid, 'study'));
+  const snap = await getDocsCacheFirst(collection(db, 'users', uid, 'study'));
   return snap.docs
     .map((d) => d.data() as StudyDoc)
     .filter((d) => isLearned(d))
